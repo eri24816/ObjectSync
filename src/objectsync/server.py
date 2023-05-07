@@ -1,5 +1,6 @@
 from itertools import count
 from typing import Dict, TypeVar
+import uuid
 from chatroom import ChatroomServer
 from chatroom.topic import Topic, IntTopic, SetTopic
 from objectsync.sobject import SObject
@@ -9,15 +10,16 @@ class Server:
         self._port = port
         self._host = host
         self._chatroom = ChatroomServer(port,host)
-        self._id_counter = count(1)
-        self._objects : Dict[int,SObject] = {}
-        self._root_object = SObject(self,0)
-        self._objects[0] = self._root_object
-        self._object_ids = self.create_topic('object_ids',SetTopic,[0])
-        self._object_ids.on_append += self._on_object_ids_append
-        self._object_ids.on_remove += self._on_object_ids_remove
+        self._objects : Dict[str,SObject] = {}
+        root_id = uuid.uuid4().hex
+        self._root_object = SObject(self,root_id)
+        self._objects[root_id] = self._root_object
+        self._object_ids = self.create_topic('object_ids',SetTopic,[root_id])
 
-        self._chatroom.register_service('create_object',self.create_object,True)
+        # Link callbacks to chatroom events
+        # so these mehtods can be called from both client and server
+        self._chatroom.on('create_object', self._create_object)
+        self._chatroom.on('destroy_object', self._destroy_object)
 
     async def serve(self):
         '''
@@ -29,30 +31,35 @@ class Server:
     Callbacks
     '''
 
-    def _on_object_ids_append(self,id):
-        print(f"Creating object with id {id}")
-        obj = SObject(self,id)
-        self._objects[id] = obj
-        # Assign the new object to be root object's child initially.
-        self._root_object.add_child(obj)
-
-    def _on_object_ids_remove(self,id):
+    def _create_object(self, id, parent_id):
+        new_object = SObject(self,id)
+        self._objects[id] = new_object
+        self._object_ids.append(id)
+        self._objects[parent_id].add_child(new_object)  
+        return id
+    
+    def _destroy_object(self, id):
         obj = self._objects[id]
+        obj.get_parent().remove_child(obj)
         obj.on_destroy()
-        self._root_object.remove_child(obj)
-        self._objects.pop(id)
+        del self._objects[id]
+        self._object_ids.remove(id)
 
     '''
     Basic methods
     '''
 
-    def get_object(self, id:int) -> SObject:
+    def get_object(self, id:str) -> SObject:
         return self._objects[id]
     
-    def create_object(self, parent_id:int) -> SObject:
-        id = next(self._id_counter)
-        self._object_ids.append(id)
-        return self._objects[id]
+    def create_object(self, parent_id:str, id:str|None = None) -> SObject:
+        if id is None:
+            id = uuid.uuid4().hex
+        self._chatroom.emit('create_object', parent_id = parent_id)
+        return self.get_object(id)
+    
+    def destroy_object(self, id:str):
+        self._chatroom.emit('destroy_object', id = id)
 
     '''
     Encapsulate the chatroom server

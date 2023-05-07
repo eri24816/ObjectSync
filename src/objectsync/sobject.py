@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from objectsync.server import Server
 
 class SObject:
-    def __init__(self, server:Server, id:int):
+    def __init__(self, server:Server, id:str):
         self._server = server
         self._id = id
         self._children_ids = self._server.create_topic(f"_/{id}/children_ids", SetTopic, [])
