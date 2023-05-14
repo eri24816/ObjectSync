@@ -1,7 +1,6 @@
 [project]
 name = "objectsync"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
     'chatroom == 0.4.1',
-    'termcolor == 2.3.0',
 ]

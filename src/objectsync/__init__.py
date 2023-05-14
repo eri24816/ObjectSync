@@ -1,2 +1,3 @@
 from .server import Server
-from chatroom.topic import Topic, IntTopic, SetTopic
+from .sobject import SObject
+from chatroom.topic import Topic, IntTopic, SetTopic, DictTopic, StringTopic
