@@ -107,7 +107,7 @@ class SObject:
         return self._id == 'root'
 
     T = TypeVar("T", bound='SObject')
-    def add_child(self, type: type[T]) -> T:  # type: ignore
+    def add_child(self, type: type[T]) -> T:
         id = uuid.uuid4().hex
         self._server._create_object(type.__name__, self._id, id=id)
         new_child = self._server.get_object(id)
@@ -119,8 +119,8 @@ class SObject:
             raise NotImplementedError('Cannot call get_parent of root object')
         return self._server.get_object(self._parent_id.get())
     
-    T = TypeVar("T", bound=Topic)
-    def add_attribute(self, topic_name, topic_type: type[T], init_value) -> T:
+    T1 = TypeVar("T1", bound=Topic)
+    def add_attribute(self, topic_name, topic_type: type[T1], init_value) -> T1: 
         if topic_name in self._attributes:
             raise ValueError(f"Attribute '{topic_name}' already exists")
         new_attr = self._server.create_topic(f"a/{self._id}/{topic_name}", topic_type, init_value)
