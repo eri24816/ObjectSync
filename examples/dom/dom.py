@@ -7,7 +7,7 @@ class ElementObject(objectsync.SObject):
         self.style = self.add_attribute('style', objectsync.DictTopic, {})
 
 class DivObject(ElementObject):
-    pass
+    frontend_type = 'div'
 
 class TextObject(ElementObject):
     def __init__(self, server: objectsync.Server, id: str, parent_id: str):
@@ -15,12 +15,12 @@ class TextObject(ElementObject):
         self.text = self.add_attribute('text', objectsync.StringTopic, '')
 
 server = objectsync.Server(port=8765)
-server.add_object_type('div',DivObject)
-server.add_object_type('text',TextObject)
+server.add_object_type(DivObject)
+server.add_object_type(TextObject)
 
-div = server.create_object('div','root')
+div = server.create_object_s('DivObject','root')
 assert isinstance(div,DivObject)
-text = server.create_object('text',div.get_id())
+text = server.create_object_s('TextObject',div.get_id())
 assert isinstance(text,TextObject)
 
 # Modify the attributes to get fancy styling
