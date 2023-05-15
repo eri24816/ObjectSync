@@ -2,5 +2,5 @@
 name = "objectsync"
 version = "0.2.0"
 dependencies = [
-    'chatroom == 0.4.1',
+    'chatroom == 0.5.0',
 ]

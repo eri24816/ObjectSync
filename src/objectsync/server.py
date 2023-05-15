@@ -1,11 +1,11 @@
 from typing import Dict, TypeVar
-import uuid
 from chatroom import ChatroomServer, Transition
 from chatroom.topic import Topic, IntTopic, SetTopic, DictTopic
 from chatroom.change import EventChangeTypes, StringChangeTypes
 
 from objectsync.hierarchy_utils import get_ancestors, lowest_common_ancestor
 from objectsync.history import HistoryItem
+from objectsync.count import gen_id
 from objectsync.sobject import SObject, SObjectSerialized
 
 class Server:
@@ -44,7 +44,7 @@ class Server:
     def _create_object(self, type: str, parent_id, id:str|None=None, serialized:SObjectSerialized|None=None):
         print(f'create object: {type} {id}')
         if id is None:
-            id = str(uuid.uuid4())
+            id = gen_id()
         cls = self._object_types[type]
         self._objects_topic.add(id,cls.frontend_type)
         new_object = cls(self,id,parent_id)
@@ -124,7 +124,7 @@ class Server:
     
     def create_object_s(self, type:str, parent_id:str, id:str|None = None, serialized:SObjectSerialized|None=None) -> SObject:
         if id is None:
-            id = uuid.uuid4().hex
+            id = gen_id()
         self._chatroom.emit('create_object', type = type, parent_id = parent_id, id = id, serialized = serialized)
         return self.get_object(id)
     

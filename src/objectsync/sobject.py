@@ -2,10 +2,10 @@ from __future__ import annotations
 from ast import Str
 from dataclasses import dataclass
 from typing import List, Dict, Any, Optional, TypeVar, Union, TYPE_CHECKING
-import uuid
 from chatroom.topic import SetTopic, Topic, IntTopic, StringTopic
 
 from objectsync.history import History, HistoryItem
+from objectsync.count import gen_id
 
 if TYPE_CHECKING:
     from objectsync.server import Server
@@ -108,7 +108,7 @@ class SObject:
 
     T = TypeVar("T", bound='SObject')
     def add_child(self, type: type[T]) -> T:
-        id = uuid.uuid4().hex
+        id = gen_id()
         self._server._create_object(type.__name__, self._id, id=id)
         new_child = self._server.get_object(id)
         assert isinstance(new_child, type)
