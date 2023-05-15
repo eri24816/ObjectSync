@@ -39,15 +39,15 @@ server.add_object_type(DivObject)
 server.add_object_type(TextObject)
 server.add_object_type(ListObject)
 
-div = server.create_object(DivObject,'root')
-text = server.create_object(TextObject,div.get_id())
+div = server.create_object(DivObject)
+text = server.create_object(TextObject)
 with server.record():
     list_object = server.create_object(ListObject,'root')
     list_object.style.add('background-color','green')
 
 # Modify the attributes to get fancy styling
 text.text.set('Hello ObjectSync!')
-text.style.add('font-size','20px')
+text.style.add('font-size','30px')
 text.style.add('border','5px solid black')
 text.style.add('background-color','yellow')
 div.style.add('background-color','blue')

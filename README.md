@@ -2,6 +2,8 @@
 
 ObjectSync is a communication framework designed for real-time applications, providing synchronization of state across a server and multiple clients. This README provides an overview of ObjectSync and its core concepts.
 
+The ObjectSync client source code is at https://github.com/eri24816/ObjectSyncClient_ts
+
 ## Introduction
 
 ObjectSync enables real-time synchronization of state between a server and multiple clients. It achieves this by maintaining a hierarchy of `SObject`s, which represent synchronized objects. Each `SObject` contains several attributes that can be considered as variables or properties of the object.
@@ -22,7 +24,7 @@ pip install -e .
 
 ### For Application
 
-Not avaliable yet.
+Not available yet.
 
 ## Get Started
 
@@ -34,45 +36,39 @@ server = objectsync.Server(port=8765)
 asyncio.run(server.serve())
 ```
 
-To define various type of `SObject`s that has various sets of attribute and functionalities, inherit the `SObject` class. For example:
+To create `SObject`s, you have to first define some subclasses of `SObject`.
+
+For example:
+
 ```python
-import asyncio
-import objectsync
-
-class ElementObject(objectsync.SObject):
-    def __init__(self, server: objectsync.Server, id: str, parent_id: str):
-        super().__init__(server, id, parent_id)
-        self._style = self.add_attribute('style', objectsync.DictTopic, {})
-
-class DivObject(ElementObject):
-    def __init__(self, server: objectsync.Server, id: str, parent_id: str):
-        super().__init__(server, id, parent_id)
-
 class TextObject(ElementObject):
-    def __init__(self, server: objectsync.Server, id: str, parent_id: str):
-        super().__init__(server, id, parent_id)
-        self._text = self.add_attribute('text', objectsync.StringTopic, '')
 
-server = objectsync.Server(port=8765)
-server.add_object_type('div',DivObject)
-server.add_object_type('text',TextObject)
-asyncio.run(server.serve())
+    frontend_type = 'text'
+
+    def pre_build(self, _):
+        # Set up style and text attributes to get control of the DOM element's style and text
+        self.style = self.add_attribute('style', objectsync.DictTopic, {})
+        self.text = self.add_attribute('text', objectsync.StringTopic, '')
 ```
 
-Then add initial stuffs to be displayed
+The class's `frontend_type` property is `'text'`, which means when a TextObject is created, an SObject of 'text' type will spawn in the frontend. The frontend `SObject` types have to be defined in the separate frontend code (in TypeScript), which is out of scope here. Let's just assume the attributes `style` and `text` is bind to a DOM element's style and text properties.
+
+Spawn a TextObject with `server.create_object` and modify the attributes a bit:
 
 ```python
-...
-div = server.create_object('div','root')
-assert isinstance(div,DivObject)
-text = server.create_object('text',div.get_id())
-assert isinstance(text,TextObject)
-
-# Modify the attributes to get fancy styling
+text = server.create_object(TextObject)
 text.text.set('Hello ObjectSync!')
-text.style.add('font-size','20px')
+text.style.add('font-size','30px')
 text.style.add('border','5px solid black')
-div.style.add('background-color','green')
+text.style.add('background-color','yellow')
+```
 
+Then run the server.
+
+```python
 asyncio.run(server.serve())
 ```
+
+The result will look like this:
+
+![Image](https://i.imgur.com/hVFeewp.png)

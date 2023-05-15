@@ -129,7 +129,7 @@ class Server:
         return self.get_object(id)
     
     T=TypeVar('T', bound=SObject)
-    def create_object(self, type:type[T], parent_id:str, id:str|None = None, serialized:SObjectSerialized|None=None) -> T:
+    def create_object(self, type:type[T], parent_id:str='root', id:str|None = None, serialized:SObjectSerialized|None=None) -> T:
         new_object = self.create_object_s(type.__name__, parent_id, id, serialized)
         assert isinstance(new_object, type)
         return new_object
