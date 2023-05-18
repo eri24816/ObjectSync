@@ -1,8 +1,6 @@
 import asyncio
 from typing import Any, Dict
 import objectsync
-import chatroom
-chatroom.set_level(3)
 
 class ElementObject(objectsync.SObject):
     frontend_type = 'div'
@@ -35,9 +33,9 @@ class ListObject(ElementObject):
 
 
 server = objectsync.Server(port=8765)
-server.add_object_type(DivObject)
-server.add_object_type(TextObject)
-server.add_object_type(ListObject)
+server.register(DivObject)
+server.register(TextObject)
+server.register(ListObject)
 
 div = server.create_object(DivObject)
 text = server.create_object(TextObject)

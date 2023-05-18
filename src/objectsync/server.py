@@ -4,20 +4,21 @@ from chatroom.topic import Topic, IntTopic, SetTopic, DictTopic
 from chatroom.change import EventChangeTypes, StringChangeTypes
 
 from objectsync.hierarchy_utils import get_ancestors, lowest_common_ancestor
-from objectsync.history import HistoryItem
 from objectsync.count import gen_id
 from objectsync.sobject import SObject, SObjectSerialized
+from objectsync.topic import ObjDictTopic, ObjListTopic, ObjSetTopic
 
 class Server:
-    def __init__(self, port: int, host:str='localhost', root_object_type:type[SObject]=SObject) -> None:
+    def __init__(self, port: int, host:str='localhost', root_object_type:type[SObject]=SObject, prebuild_kwargs = {}) -> None:
         self._port = port
         self._host = host
+        self._prebuild_kwargs = prebuild_kwargs
         self._chatroom = ChatroomServer(port,host,on_transition_done=self._on_transition_done)
         self._objects : Dict[str,SObject] = {}
         root_id = 'root'
         self._root_object = root_object_type(self,root_id,'')
         self._objects[root_id] = self._root_object
-        self._objects_topic = self.create_topic('_objects',DictTopic,{root_id:'root'})
+        self._objects_topic = self.create_topic('_objects',DictTopic,{root_id:'Root'})
         self._object_types : Dict[str,type[SObject]] = {}
 
         # Link callbacks to chatroom events
@@ -46,12 +47,12 @@ class Server:
         if id is None:
             id = gen_id()
         cls = self._object_types[type]
-        self._objects_topic.add(id,cls.frontend_type)
         new_object = cls(self,id,parent_id)
         self._objects[id] = new_object
+        new_object.initialize(serialized,prebuild_kwargs=self._prebuild_kwargs)
         new_object.get_parent()._add_child(new_object)
         assert new_object.get_parent().get_id() == parent_id
-        new_object.initialize(serialized)
+        self._objects_topic.add(id,cls.frontend_type)
         return {'id':id,'type':type,'parent_id':parent_id,'serialized':new_object.serialize()}
     
     def _destroy_object(self, id, **kwargs):
@@ -116,7 +117,7 @@ class Server:
     Basic methods
     '''
 
-    def add_object_type(self, object_type:type[SObject]):
+    def register(self, object_type:type[SObject]):
         self._object_types[object_type.__name__] = object_type
 
     def get_object(self, id:str) -> SObject:
