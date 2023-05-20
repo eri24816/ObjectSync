@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, List
 from chatroom.change import Change
 from chatroom.utils import Action
-from chatroom.topic import ListTopic, DictTopic, SetTopic, Topic
+from chatroom.topic import ListTopic, DictTopic, SetTopic, Topic, StringTopic
 
 if TYPE_CHECKING:
     from objectsync.sobject import SObject
@@ -16,6 +16,28 @@ def obj_ref(topic:Topic,server):
             return ObjSetTopic(topic,server.get_object)
         case DictTopic():
             return ObjDictTopic(topic,server.get_object)
+
+class ObjTopic:
+    def __init__(self, topic: StringTopic,map: Callable[[str],SObject]):
+        self._topic = topic
+        self._map : Callable[[str],SObject]|None = map
+        self.on_set = Action()
+        self.on_set2 = Action()
+
+        self._topic.on_set += lambda new_value: self.on_set(self.map(new_value))
+        self._topic.on_set2 += lambda old_value, new_value: self.on_set2(self.map(old_value), self.map(new_value))
+
+    def map(self,value:str):
+        try:
+            return self._map(value)
+        except:
+            return None
+
+    def set(self, object:SObject):
+        return self._topic.set(object.get_id())
+    
+    def get(self):
+        return self.map(self._topic.get())
 
 class ObjListTopic:
     def __init__(self, topic: ListTopic,map: Callable[[str],SObject]):

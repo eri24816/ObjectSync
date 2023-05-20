@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from mimetypes import init
 from typing import List, Dict, Any, Optional, TypeVar, Union, TYPE_CHECKING
 from chatroom.topic import SetTopic, Topic, IntTopic, StringTopic, DictTopic, ListTopic
-from objectsync.topic import ObjDictTopic, ObjListTopic, ObjSetTopic
+from objectsync.topic import ObjDictTopic, ObjListTopic, ObjSetTopic, ObjTopic
 
 from objectsync.history import History, HistoryItem
 from objectsync.count import gen_id
@@ -80,9 +80,6 @@ class SObject:
         Called after the object and its children have been initialized.
         Link attributes to child objects, etc.
         '''
-    
-    def _obj_ref(self,topic):
-        return obj_ref(topic,self._server)
 
     '''
     Callbacks
@@ -125,31 +122,40 @@ class SObject:
             raise NotImplementedError('Cannot call get_parent of root object')
         return self._server.get_object(self._parent_id.get())
     
-    T1 = TypeVar("T1", bound=Topic|ObjDictTopic|ObjListTopic|ObjSetTopic)
+    T1 = TypeVar("T1", bound=Topic|ObjTopic|ObjDictTopic|ObjListTopic|ObjSetTopic)
     def add_attribute(self, topic_name, topic_type: type[T1], init_value=None) -> T1: 
 
         if topic_name in self._attributes:
             raise ValueError(f"Attribute '{topic_name}' already exists")
-        if topic_type == ObjDictTopic:
+        if topic_type == ObjTopic:
             if init_value is not None:
-                init_value = {key: self._obj_ref(value) for key, value in init_value.items()}
+                init_value = self._server.get_object(init_value)
+            new_attr = self.add_attribute(topic_name, StringTopic, init_value)
+            new_attr = ObjTopic(new_attr, self._server.get_object)
+            return new_attr
+        elif topic_type == ObjDictTopic:
+            if init_value is not None:
+                assert isinstance(init_value, dict)
+                init_value = {key: self._server.get_object(value) for key, value in init_value.items()}
             new_attr = self.add_attribute(topic_name, DictTopic, init_value)
             new_attr = ObjDictTopic(new_attr, self._server.get_object)
-            return new_attr # type: ignore
+            return new_attr
         elif topic_type == ObjListTopic:
             if init_value is not None:
-                init_value = [self._obj_ref(value) for value in init_value]
+                assert isinstance(init_value, list)
+                init_value = [self._server.get_object(value) for value in init_value]
             new_attr = self.add_attribute(topic_name, ListTopic, init_value)
             new_attr = ObjListTopic(new_attr, self._server.get_object)
-            return new_attr # type: ignore
+            return new_attr
         elif topic_type == ObjSetTopic:
             if init_value is not None:
-                init_value = {self._obj_ref(value) for value in init_value}
+                assert isinstance(init_value, set)
+                init_value = {self._server.get_object(value) for value in init_value}
             new_attr = self.add_attribute(topic_name, SetTopic, init_value)
             new_attr = ObjSetTopic(new_attr, self._server.get_object)
-            return new_attr # type: ignore
-        
-        new_attr = self._server.create_topic(f"a/{self._id}/{topic_name}", topic_type, init_value) # type: ignore
+            return new_attr
+        else:
+            new_attr = self._server.create_topic(f"a/{self._id}/{topic_name}", topic_type, init_value) # type: ignore
         self._attributes[topic_name] = new_attr
         return new_attr
     
