@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Callable, List
 from chatroom.change import Change
 from chatroom.utils import Action
 from chatroom.topic import ListTopic, DictTopic, SetTopic, Topic, StringTopic
+from typing import TypeVar, Generic
 
 if TYPE_CHECKING:
     from objectsync.sobject import SObject
@@ -17,10 +18,14 @@ def obj_ref(topic:Topic,server):
         case DictTopic():
             return ObjDictTopic(topic,server.get_object)
 
-class ObjTopic:
-    def __init__(self, topic: StringTopic,map: Callable[[str],SObject]):
+T = TypeVar('T', bound='SObject')
+class ObjTopic(Generic[T]):
+    @classmethod
+    def get_type_name(cls):
+        return 'string'
+    def __init__(self, topic: StringTopic,map: Callable[[str],T]):
         self._topic = topic
-        self._map : Callable[[str],SObject]|None = map
+        self._map : Callable[[str],T]|None = map
         self.on_set = Action()
         self.on_set2 = Action()
 
@@ -33,13 +38,16 @@ class ObjTopic:
         except:
             return None
 
-    def set(self, object:SObject):
+    def set(self, object:T):
         return self._topic.set(object.get_id())
     
     def get(self):
         return self.map(self._topic.get())
 
 class ObjListTopic:
+    @classmethod
+    def get_type_name(cls):
+        return 'list'
     def __init__(self, topic: ListTopic,map: Callable[[str],SObject]):
         self._topic = topic
         self._map : Callable[[str],SObject]|None = map
@@ -75,6 +83,9 @@ class ObjListTopic:
         return [self._map(x) for x in self._topic.get()]
     
 class ObjSetTopic:
+    @classmethod
+    def get_type_name(cls):
+        return 'set'
     def __init__(self, topic: SetTopic,map: Callable[[str],SObject]):
         self._topic = topic
         self._map : Callable[[str],SObject]|None = map
@@ -101,6 +112,9 @@ class ObjSetTopic:
         return {self._map(x) for x in self._topic.get()}
     
 class ObjDictTopic:
+    @classmethod
+    def get_type_name(cls):
+        return 'dict'
     def __init__(self, topic: DictTopic,map: Callable[[str],SObject]):
         self._topic = topic
         self._map : Callable[[str],SObject]|None = map

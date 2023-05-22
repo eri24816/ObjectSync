@@ -3,6 +3,7 @@ from ast import Str
 from dataclasses import dataclass
 from mimetypes import init
 from typing import List, Dict, Any, Optional, TypeVar, Union, TYPE_CHECKING
+import typing
 from chatroom.topic import SetTopic, Topic, IntTopic, StringTopic, DictTopic, ListTopic
 from objectsync.topic import ObjDictTopic, ObjListTopic, ObjSetTopic, ObjTopic
 
@@ -31,6 +32,7 @@ class SObject:
         self._server = server
         self._id = id
         self._parent_id = self._server.create_topic(f"parent_id/{id}", StringTopic, parent_id)
+        self._tags = self._server.create_topic(f"tags/{id}", SetTopic)
         self._parent_id.on_set2 += self._on_parent_changed
         self._attributes : Dict[str,Topic] = {}
         self._children : List[SObject] = []
@@ -124,43 +126,54 @@ class SObject:
     
     T1 = TypeVar("T1", bound=Topic|ObjTopic|ObjDictTopic|ObjListTopic|ObjSetTopic)
     def add_attribute(self, topic_name, topic_type: type[T1], init_value=None) -> T1: 
-
+        origin_type = typing.get_origin(topic_type)
+        if origin_type is None:
+            origin_type = topic_type
         if topic_name in self._attributes:
             raise ValueError(f"Attribute '{topic_name}' already exists")
-        if topic_type == ObjTopic:
+        if origin_type == ObjTopic:
             if init_value is not None:
-                init_value = self._server.get_object(init_value)
+                assert isinstance(init_value, SObject)
+                init_value = init_value.get_id()
             new_attr = self.add_attribute(topic_name, StringTopic, init_value)
             new_attr = ObjTopic(new_attr, self._server.get_object)
-            return new_attr
-        elif topic_type == ObjDictTopic:
+            return new_attr # type: ignore
+        if origin_type == ObjDictTopic:
             if init_value is not None:
-                assert isinstance(init_value, dict)
-                init_value = {key: self._server.get_object(value) for key, value in init_value.items()}
+                assert isinstance(init_value, Dict)
+                init_value = {key: value.get_id() for key, value in init_value.items()}
             new_attr = self.add_attribute(topic_name, DictTopic, init_value)
             new_attr = ObjDictTopic(new_attr, self._server.get_object)
-            return new_attr
-        elif topic_type == ObjListTopic:
+            return new_attr # type: ignore
+        if origin_type == ObjListTopic:
             if init_value is not None:
                 assert isinstance(init_value, list)
-                init_value = [self._server.get_object(value) for value in init_value]
+                init_value = [value.get_id() for value in init_value]
             new_attr = self.add_attribute(topic_name, ListTopic, init_value)
             new_attr = ObjListTopic(new_attr, self._server.get_object)
-            return new_attr
-        elif topic_type == ObjSetTopic:
+            return new_attr # type: ignore
+        if origin_type == ObjSetTopic:
             if init_value is not None:
-                assert isinstance(init_value, set)
-                init_value = {self._server.get_object(value) for value in init_value}
+                assert isinstance(init_value, list)
+                init_value = [value.get_id() for value in init_value]
             new_attr = self.add_attribute(topic_name, SetTopic, init_value)
             new_attr = ObjSetTopic(new_attr, self._server.get_object)
-            return new_attr
+            return new_attr # type: ignore
         else:
             new_attr = self._server.create_topic(f"a/{self._id}/{topic_name}", topic_type, init_value) # type: ignore
         self._attributes[topic_name] = new_attr
         return new_attr
     
+    def emit(self, event_name, **kwargs):
+        self._server.emit(f"a/{self._id}/{event_name}", **kwargs)
+    
+    def on(self, event_name, callback):
+        self._server.on(f"a/{self._id}/{event_name}", callback)
+        
+    
     def destroy(self)-> SObjectSerialized:
         self._server.remove_topic(self._parent_id.get_name())
+        self._server.remove_topic(self._tags.get_name())
 
         attributes_serialized = {name: attr.get() for name, attr in self._attributes.items()}
         for attr in self._attributes.values():

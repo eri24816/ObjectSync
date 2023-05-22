@@ -153,3 +153,9 @@ class Server:
     
     def remove_topic(self, topic_name):
         self._chatroom.remove_topic(topic_name)
+
+    def on(self, event_name, callback, inverse_callback=lambda *args, **kwargs: None):
+        self._chatroom.on(event_name, callback, inverse_callback)
+
+    def emit(self, event_name, **kwargs):
+        self._chatroom.emit(event_name, **kwargs)
