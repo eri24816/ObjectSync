@@ -1,4 +1,4 @@
-from typing import Dict, TypeVar
+from typing import Dict, TypeVar, Any, Callable
 from chatroom import ChatroomServer, Transition
 from chatroom.topic import Topic, IntTopic, SetTopic, DictTopic
 from chatroom.change import EventChangeTypes, StringChangeTypes
@@ -42,14 +42,14 @@ class Server:
     Callbacks
     '''
 
-    def _create_object(self, type: str, parent_id, id:str|None=None, serialized:SObjectSerialized|None=None):
+    def _create_object(self, type: str, parent_id, id:str|None=None, serialized:SObjectSerialized|None=None, prebuild_kwargs:Dict[str,Any]={}):
         print(f'create object: {type} {id}')
         if id is None:
             id = gen_id()
         cls = self._object_types[type]
         new_object = cls(self,id,parent_id)
         self._objects[id] = new_object
-        new_object.initialize(serialized,prebuild_kwargs=self._prebuild_kwargs)
+        new_object.initialize(serialized,prebuild_kwargs={**self._prebuild_kwargs,**prebuild_kwargs})
         new_object.get_parent()._add_child(new_object)
         assert new_object.get_parent().get_id() == parent_id
         self._objects_topic.add(id,cls.frontend_type)
@@ -123,15 +123,15 @@ class Server:
     def get_object(self, id:str) -> SObject:
         return self._objects[id]
     
-    def create_object_s(self, type:str, parent_id:str, id:str|None = None, serialized:SObjectSerialized|None=None) -> SObject:
+    def create_object_s(self, type:str, parent_id:str, id:str|None = None, serialized:SObjectSerialized|None=None,**prebuild_kwargs) -> SObject:
         if id is None:
             id = gen_id()
-        self._chatroom.emit('create_object', type = type, parent_id = parent_id, id = id, serialized = serialized)
+        self._chatroom.emit('create_object', type = type, parent_id = parent_id, id = id, serialized = serialized, prebuild_kwargs=prebuild_kwargs)
         return self.get_object(id)
     
     T=TypeVar('T', bound=SObject)
-    def create_object(self, type:type[T], parent_id:str='root', id:str|None = None, serialized:SObjectSerialized|None=None) -> T:
-        new_object = self.create_object_s(type.__name__, parent_id, id, serialized)
+    def create_object(self, type:type[T], parent_id:str='root', id:str|None = None, serialized:SObjectSerialized|None=None,**prebuild_kwargs) -> T:
+        new_object = self.create_object_s(type.__name__, parent_id, id, serialized, **prebuild_kwargs)
         assert isinstance(new_object, type)
         return new_object
     
@@ -154,8 +154,8 @@ class Server:
     def remove_topic(self, topic_name):
         self._chatroom.remove_topic(topic_name)
 
-    def on(self, event_name, callback, inverse_callback=lambda *args, **kwargs: None):
-        self._chatroom.on(event_name, callback, inverse_callback)
+    def on(self, event_name: str, callback: Callable, inverse_callback: Callable|None = None, is_stateful: bool = True, *args, **kwargs: None):
+        self._chatroom.on(event_name, callback, inverse_callback, is_stateful)
 
     def emit(self, event_name, **kwargs):
         self._chatroom.emit(event_name, **kwargs)

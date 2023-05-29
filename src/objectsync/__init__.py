@@ -4,4 +4,4 @@ from chatroom.topic import Topic, IntTopic, SetTopic, DictTopic, StringTopic, Li
 from objectsync.topic import ObjListTopic, ObjSetTopic, ObjDictTopic, ObjTopic
 
 import chatroom
-chatroom.set_level(3)
+#chatroom.set_level(3)

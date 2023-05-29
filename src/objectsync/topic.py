@@ -29,8 +29,10 @@ class ObjTopic(Generic[T]):
         self.on_set = Action()
         self.on_set2 = Action()
 
-        self._topic.on_set += lambda new_value: self.on_set(self.map(new_value))
-        self._topic.on_set2 += lambda old_value, new_value: self.on_set2(self.map(old_value), self.map(new_value))
+        self._topic.on_set += lambda new_value: self.on_set(self.map(new_value))\
+            if len(self.on_set._callbacks) > 0 else None # Must have this check to avoid error when building (children not yet created)
+        self._topic.on_set2 += lambda old_value, new_value: self.on_set2(self.map(old_value), self.map(new_value))\
+            if len(self.on_set2._callbacks) > 0 else None
 
     def map(self,value:str):
         try:
@@ -56,10 +58,14 @@ class ObjListTopic:
         self.on_insert = Action()
         self.on_pop = Action()
 
-        self._topic.on_set += lambda new_value: self.on_set([self._map(x) for x in new_value])
-        self._topic.on_set2 += lambda old_value, new_value: self.on_set2([self._map(x) for x in old_value], [self._map(x) for x in new_value])
-        self._topic.on_insert += lambda value, index: self.on_insert(self._map(value), index )
-        self._topic.on_pop += lambda value, index: self.on_pop(self._map(value), index )
+        self._topic.on_set += lambda new_value: self.on_set([self._map(x) for x in new_value])\
+            if len(self.on_set._callbacks) > 0 else None
+        self._topic.on_set2 += lambda old_value, new_value: self.on_set2([self._map(x) for x in old_value], [self._map(x) for x in new_value])\
+            if len(self.on_set2._callbacks) > 0 else None
+        self._topic.on_insert += lambda value, index: self.on_insert(self._map(value), index )\
+            if len(self.on_insert._callbacks) > 0 else None
+        self._topic.on_pop += lambda value, index: self.on_pop(self._map(value), index )\
+            if len(self.on_pop._callbacks) > 0 else None
 
     def set(self, objects:List[SObject]):
         return self._topic.set([x.get_id() for x in objects])
@@ -94,10 +100,14 @@ class ObjSetTopic:
         self.on_append = Action()
         self.on_remove = Action()
 
-        self._topic.on_set += lambda new_value: self.on_set([self._map(x) for x in new_value])
-        self._topic.on_set2 += lambda old_value, new_value: self.on_set2([self._map(x) for x in old_value], [self._map(x) for x in new_value])
-        self._topic.on_append += lambda value: self.on_append(self._map(value))
-        self._topic.on_remove += lambda value: self.on_remove(self._map(value))
+        self._topic.on_set += lambda new_value: self.on_set([self._map(x) for x in new_value])\
+            if len(self.on_set._callbacks) > 0 else None
+        self._topic.on_set2 += lambda old_value, new_value: self.on_set2([self._map(x) for x in old_value], [self._map(x) for x in new_value])\
+            if len(self.on_set2._callbacks) > 0 else None
+        self._topic.on_append += lambda value: self.on_append(self._map(value))\
+            if len(self.on_append._callbacks) > 0 else None
+        self._topic.on_remove += lambda value: self.on_remove(self._map(value))\
+            if len(self.on_remove._callbacks) > 0 else None
 
     def set(self, objects:List[SObject]):
         return self._topic.set([x.get_id() for x in objects])
@@ -125,11 +135,16 @@ class ObjDictTopic:
         self.on_remove = Action()
         self.on_change_value = Action()
         
-        self._topic.on_set += lambda new_value: self.on_set({k:self._map(v) for k,v in new_value.items()})
-        self._topic.on_set2 += lambda old_value, new_value: self.on_set2({k:self._map(v) for k,v in old_value.items()}, {k:self._map(v) for k,v in new_value.items()})
-        self._topic.on_add += lambda key, value: self.on_add(key, self._map(value))
-        self._topic.on_remove += lambda key, value: self.on_remove(key, self._map(value))
-        self._topic.on_change_value += lambda key, new_value: self.on_change_value(key, self._map(new_value))
+        self._topic.on_set += lambda new_value: self.on_set({k:self._map(v) for k,v in new_value.items()})\
+            if len(self.on_set._callbacks) > 0 else None
+        self._topic.on_set2 += lambda old_value, new_value: self.on_set2({k:self._map(v) for k,v in old_value.items()}, {k:self._map(v) for k,v in new_value.items()})\
+            if len(self.on_set2._callbacks) > 0 else None
+        self._topic.on_add += lambda key, value: self.on_add(key, self._map(value))\
+            if len(self.on_add._callbacks) > 0 else None
+        self._topic.on_remove += lambda key, value: self.on_remove(key, self._map(value))\
+            if len(self.on_remove._callbacks) > 0 else None
+        self._topic.on_change_value += lambda key, new_value: self.on_change_value(key, self._map(new_value))\
+            if len(self.on_change_value._callbacks) > 0 else None
 
     def set(self, objects:dict):
         return self._topic.set({k:v.get_id() for k,v in objects.items()})

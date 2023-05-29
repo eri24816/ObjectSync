@@ -1,8 +1,7 @@
 from __future__ import annotations
-from ast import Str
 from dataclasses import dataclass
 from mimetypes import init
-from typing import List, Dict, Any, Optional, TypeVar, Union, TYPE_CHECKING
+from typing import List, Dict, Any, Optional, TypeVar, Union, TYPE_CHECKING, Callable
 import typing
 from chatroom.topic import SetTopic, Topic, IntTopic, StringTopic, DictTopic, ListTopic
 from objectsync.topic import ObjDictTopic, ObjListTopic, ObjSetTopic, ObjTopic
@@ -52,7 +51,7 @@ class SObject:
         
         self.post_build()
 
-    def pre_build(self, attribute_values:Dict[str,Any]|None):
+    def pre_build(self, attribute_values:Dict[str,Any]|None,**_):
         '''
         Create attributes for this object and set their initial values here.
 
@@ -75,7 +74,6 @@ class SObject:
             self._attributes[attr_name].set(attr_value)
         for child_id, child_serialized in serialized.children.items():
             self._server._create_object(child_serialized.type, self._id, child_id, child_serialized)
-            self._children.append(self._server.get_object(child_id))
 
     def post_build(self):
         '''
@@ -95,6 +93,10 @@ class SObject:
     '''
     
     def _add_child(self, child:SObject):
+        print(f"Adding child {child.get_id()} to {self.get_id()}")
+        for c in self._children:
+            if c.get_id() == child.get_id():
+                raise ValueError(f"Child {child.get_id()} already exists")
         self._children.append(child)
     
     def _remove_child(self, child:SObject):
@@ -167,8 +169,8 @@ class SObject:
     def emit(self, event_name, **kwargs):
         self._server.emit(f"a/{self._id}/{event_name}", **kwargs)
     
-    def on(self, event_name, callback):
-        self._server.on(f"a/{self._id}/{event_name}", callback)
+    def on(self, event_name: str, callback: Callable, inverse_callback: Callable|None = None, is_stateful: bool = True):
+        self._server.on(f"a/{self._id}/{event_name}", callback, inverse_callback, is_stateful)
         
     
     def destroy(self)-> SObjectSerialized:
@@ -179,8 +181,10 @@ class SObject:
         for attr in self._attributes.values():
             self._server.remove_topic(attr.get_name())
 
+        print('allchid',[c.get_id() for c in self._children])
         children_serialized = {}
         for child in self._children.copy():
+            print(f"Destroying child {child.get_id()} from {self.get_id()}")
             child_info = self._server._destroy_object(child.get_id())
             children_serialized[child.get_id()] = child_info['serialized']
 
@@ -200,3 +204,13 @@ class SObject:
             attributes = attributes_serialized,
             children = children_serialized
         )
+
+    def add_tag(self, tag):
+        self._tags.append(tag)
+
+    def remove_tag(self, tag):
+        self._tags.remove(tag)
+
+    def has_tag(self, tag):
+        return tag in self._tags
+        
