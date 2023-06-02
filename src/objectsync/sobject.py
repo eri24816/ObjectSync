@@ -8,7 +8,6 @@ from objectsync.topic import ObjDictTopic, ObjListTopic, ObjSetTopic, ObjTopic
 
 from objectsync.history import History, HistoryItem
 from objectsync.count import gen_id
-from objectsync.topic import obj_ref
 
 if TYPE_CHECKING:
     from objectsync.server import Server
@@ -114,9 +113,9 @@ class SObject:
         return self._id == 'root'
 
     T = TypeVar("T", bound='SObject')
-    def add_child(self, type: type[T]) -> T:
+    def add_child(self, type: type[T], **prebuild_kwargs) -> T:
         id = gen_id()
-        self._server._create_object(type.__name__, self._id, id=id)
+        self._server._create_object(type.__name__, self._id, id=id,prebuild_kwargs=prebuild_kwargs)
         new_child = self._server.get_object(id)
         assert isinstance(new_child, type)
         return new_child
@@ -181,7 +180,6 @@ class SObject:
         for attr in self._attributes.values():
             self._server.remove_topic(attr.get_name())
 
-        print('allchid',[c.get_id() for c in self._children])
         children_serialized = {}
         for child in self._children.copy():
             print(f"Destroying child {child.get_id()} from {self.get_id()}")

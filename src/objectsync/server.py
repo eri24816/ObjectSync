@@ -65,6 +65,11 @@ class Server:
     
     def _on_transition_done(self, transition:Transition):
         # Find the lowest object to record the transition in
+        print('\n=== tran ===')
+        for change in transition.changes:
+            print(change.serialize())
+        print('')
+        
         affected_objs = []
         for change in transition.changes:
             split = change.topic_name.split('/')
@@ -82,6 +87,8 @@ class Server:
                     assert change.old_value is not None
                     affected_objs.append(self._objects[change.old_value])
                     affected_objs.append(self._objects[change.value])
+                case 'tags':
+                    affected_objs.append(self._objects[change.topic_name.split('/')[1]]) # improve this
 
         if len(affected_objs) == 0:
             return
@@ -89,10 +96,7 @@ class Server:
         lowest = lowest_common_ancestor(affected_objs)
         for obj in get_ancestors(lowest):
             obj.history.add(transition)
-        print('\n=== tran ===')
-        for change in transition.changes:
-            print(change.serialize())
-        print('')
+        
 
     def _undo(self, target = None):
         if target is None:
