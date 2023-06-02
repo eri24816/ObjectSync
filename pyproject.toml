@@ -2,5 +2,19 @@
 name = "objectsync"
 version = "0.3.0"
 dependencies = [
-    'chatroom == 0.5.0',
+    'chatroom >= 0.5.0',
 ]
+[tool.poetry]
+name = "objectsync"
+version = "0.3.0"
+description = ""
+authors = ["peterxcli <peterxcli@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+chatRoom = { git = "https://github.com/peterxcli/ChatRoom.git", branch = "main" }
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
