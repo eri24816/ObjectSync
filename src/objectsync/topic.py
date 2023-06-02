@@ -5,19 +5,6 @@ from chatroom.utils import Action
 from chatroom.topic import ListTopic, DictTopic, SetTopic, Topic, StringTopic
 from typing import TypeVar, Generic
 
-if TYPE_CHECKING:
-    from objectsync.sobject import SObject
-print(TYPE_CHECKING)
-
-def obj_ref(topic:Topic,server):
-    match topic:
-        case ListTopic():
-            return ObjListTopic(topic,server.get_object)
-        case SetTopic():
-            return ObjSetTopic(topic,server.get_object)
-        case DictTopic():
-            return ObjDictTopic(topic,server.get_object)
-
 T = TypeVar('T', bound='SObject')
 class ObjTopic(Generic[T]):
     @classmethod
@@ -46,13 +33,14 @@ class ObjTopic(Generic[T]):
     def get(self):
         return self.map(self._topic.get())
 
-class ObjListTopic:
+T = TypeVar('T', bound='SObject')
+class ObjListTopic(Generic[T]):
     @classmethod
     def get_type_name(cls):
         return 'list'
-    def __init__(self, topic: ListTopic,map: Callable[[str],SObject]):
+    def __init__(self, topic: ListTopic,map: Callable[[str],T]):
         self._topic = topic
-        self._map : Callable[[str],SObject]|None = map
+        self._map : Callable[[str],T]|None = map
         self.on_set = Action()
         self.on_set2 = Action()
         self.on_insert = Action()
@@ -67,14 +55,21 @@ class ObjListTopic:
         self._topic.on_pop += lambda value, index: self.on_pop(self._map(value), index )\
             if len(self.on_pop._callbacks) > 0 else None
 
-    def set(self, objects:List[SObject]):
+    def set(self, objects:List[T]):
         return self._topic.set([x.get_id() for x in objects])
 
-    def insert(self, object:SObject, position: int = -1):
+    def insert(self, object:T, position: int = -1):
         return self._topic.insert(object.get_id(), position)
     
-    def remove(self, object:SObject):
+    def remove(self, object:T):
         return self._topic.remove(object.get_id())
+    
+    def __iter__(self):
+        old_gen = self._topic.__iter__()
+        def new_gen():
+            for x in old_gen:
+                yield self._map(x)
+        return new_gen()
         
     def __getitem__(self, key):
         return self._map(self._topic.__getitem__(key))
@@ -85,16 +80,20 @@ class ObjListTopic:
     def __delitem__(self, key):
         return self._topic.__delitem__(key)
     
+    def __len__(self):
+        return self._topic.__len__()
+    
     def get(self):
         return [self._map(x) for x in self._topic.get()]
-    
-class ObjSetTopic:
+
+T = TypeVar('T', bound='SObject')
+class ObjSetTopic(Generic[T]):
     @classmethod
     def get_type_name(cls):
         return 'set'
-    def __init__(self, topic: SetTopic,map: Callable[[str],SObject]):
+    def __init__(self, topic: SetTopic,map: Callable[[str],T]):
         self._topic = topic
-        self._map : Callable[[str],SObject]|None = map
+        self._map : Callable[[str],T]|None = map
         self.on_set = Action()
         self.on_set2 = Action()
         self.on_append = Action()
@@ -109,25 +108,26 @@ class ObjSetTopic:
         self._topic.on_remove += lambda value: self.on_remove(self._map(value))\
             if len(self.on_remove._callbacks) > 0 else None
 
-    def set(self, objects:List[SObject]):
+    def set(self, objects:List[T]):
         return self._topic.set([x.get_id() for x in objects])
 
-    def append(self, object:SObject):
+    def append(self, object:T):
         return self._topic.append(object.get_id())
     
-    def remove(self, object:SObject):
+    def remove(self, object:T):
         return self._topic.remove(object.get_id())
     
     def get(self):
         return {self._map(x) for x in self._topic.get()}
-    
-class ObjDictTopic:
+
+T = TypeVar('T', bound='SObject')    
+class ObjDictTopic(Generic[T]):
     @classmethod
     def get_type_name(cls):
         return 'dict'
-    def __init__(self, topic: DictTopic,map: Callable[[str],SObject]):
+    def __init__(self, topic: DictTopic,map: Callable[[str],T]):
         self._topic = topic
-        self._map : Callable[[str],SObject]|None = map
+        self._map : Callable[[str],T]|None = map
 
         self.on_set = Action()
         self.on_set2 = Action()
@@ -149,10 +149,10 @@ class ObjDictTopic:
     def set(self, objects:dict):
         return self._topic.set({k:v.get_id() for k,v in objects.items()})
 
-    def change_value(self, key, value:SObject):
+    def change_value(self, key, value:T):
         return self._topic.change_value(key, value.get_id())
     
-    def add(self, key, value:SObject):
+    def add(self, key, value:T):
         return self._topic.add(key, value.get_id())
     
     def remove(self, key):
