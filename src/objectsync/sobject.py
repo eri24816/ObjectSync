@@ -30,7 +30,7 @@ class SObject:
         self._server = server
         self._id = id
         self._parent_id = self._server.create_topic(f"parent_id/{id}", StringTopic, parent_id)
-        self._tags = self._server.create_topic(f"tags/{id}", SetTopic)
+        self._tags = self._server.create_topic(f"tags/{id}", SetTopic, is_stateful=False)
         self._parent_id.on_set2 += self._on_parent_changed
         self._attributes : Dict[str,Topic] = {}
         self._children : List[SObject] = []
