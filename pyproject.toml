@@ -1,18 +1,12 @@
-[project]
-name = "objectsync"
-version = "0.3.0"
-dependencies = [
-    'chatroom >= 0.5.0',
-]
 [tool.poetry]
 name = "objectsync"
-version = "0.3.0"
+version = "0.3.1"
 description = ""
-authors = ["peterxcli <peterxcli@gmail.com>"]
+authors = ["peterxcli <peterxcli@gmail.com>","eri24816 <a931eric@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-chatRoom = { git = "https://github.com/peterxcli/ChatRoom.git", branch = "main" }
+chatRoom = { git = "https://github.com/eri24816/ChatRoom.git", branch = "main" }
 
 
 [build-system]
