@@ -5,6 +5,9 @@ from chatroom.utils import Action
 from chatroom.topic import ListTopic, DictTopic, SetTopic, Topic, StringTopic
 from typing import TypeVar, Generic
 
+if TYPE_CHECKING:
+    from objectsync.sobject import SObject
+
 T = TypeVar('T', bound='SObject')
 class ObjTopic(Generic[T]):
     @classmethod
