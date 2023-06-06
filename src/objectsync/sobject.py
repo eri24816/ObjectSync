@@ -126,7 +126,7 @@ class SObject:
         return self._server.get_object(self._parent_id.get())
     
     T1 = TypeVar("T1", bound=Topic|ObjTopic|ObjDictTopic|ObjListTopic|ObjSetTopic)
-    def add_attribute(self, topic_name, topic_type: type[T1], init_value=None) -> T1: 
+    def add_attribute(self, topic_name, topic_type: type[T1], init_value=None, is_stateful=True) -> T1: 
         origin_type = typing.get_origin(topic_type)
         if origin_type is None:
             origin_type = topic_type
@@ -136,7 +136,7 @@ class SObject:
             if init_value is not None:
                 assert isinstance(init_value, SObject)
                 init_value = init_value.get_id()
-            new_attr = self.add_attribute(topic_name, StringTopic, init_value)
+            new_attr = self.add_attribute(topic_name, StringTopic, init_value, is_stateful)
             new_attr = ObjTopic(new_attr, self._server.get_object)
             return new_attr # type: ignore
         if origin_type == ObjDictTopic:
@@ -144,24 +144,24 @@ class SObject:
                 assert isinstance(init_value, Dict)
                 init_value = {key: value.get_id() for key, value in init_value.items()}
             new_attr = self.add_attribute(topic_name, DictTopic, init_value)
-            new_attr = ObjDictTopic(new_attr, self._server.get_object)
+            new_attr = ObjDictTopic(new_attr, self._server.get_object, is_stateful)
             return new_attr # type: ignore
         if origin_type == ObjListTopic:
             if init_value is not None:
                 assert isinstance(init_value, list)
                 init_value = [value.get_id() for value in init_value]
             new_attr = self.add_attribute(topic_name, ListTopic, init_value)
-            new_attr = ObjListTopic(new_attr, self._server.get_object)
+            new_attr = ObjListTopic(new_attr, self._server.get_object, is_stateful)
             return new_attr # type: ignore
         if origin_type == ObjSetTopic:
             if init_value is not None:
                 assert isinstance(init_value, list)
                 init_value = [value.get_id() for value in init_value]
             new_attr = self.add_attribute(topic_name, SetTopic, init_value)
-            new_attr = ObjSetTopic(new_attr, self._server.get_object)
+            new_attr = ObjSetTopic(new_attr, self._server.get_object, is_stateful)
             return new_attr # type: ignore
         else:
-            new_attr = self._server.create_topic(f"a/{self._id}/{topic_name}", topic_type, init_value) # type: ignore
+            new_attr = self._server.create_topic(f"a/{self._id}/{topic_name}", topic_type, init_value, is_stateful) # type: ignore
         self._attributes[topic_name] = new_attr
         return new_attr
     
