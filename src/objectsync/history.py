@@ -24,10 +24,12 @@ class History:
             self.chain[self._current_index].done = False
             self._current_index -= 1
 
-            logger.debug('\n=== undo ===')
+            debug_msg = '\n=== undo ===\n'
             for change in reversed(self.chain[self._current_index+1].transition.changes):
-                logger.debug(change.serialize())
-            logger.debug('')
+                debug_msg += change.serialize() + '\n'
+            debug_msg += '\n'
+            logger.debug(debug_msg)
+
             return self.chain[self._current_index+1].transition
         else:
             return None
@@ -37,10 +39,12 @@ class History:
             self._current_index += 1
             self.chain[self._current_index].done = True
 
-            logger.debug('\n=== redo ===')
+            debug_msg = '\n=== redo ===\n'
             for change in self.chain[self._current_index].transition.changes:
-                logger.debug(change.serialize())
-            logger.debug('')
+                debug_msg += change.serialize() + '\n'
+            debug_msg += '\n'
+            logger.debug(debug_msg)
+
             return self.chain[self._current_index].transition
         else:
             return None

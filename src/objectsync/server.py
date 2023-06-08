@@ -70,10 +70,12 @@ class Server:
     
     def _on_transition_done(self, transition:Transition):
         # Find the lowest object to record the transition in
-        logger.debug('\n=== tran ===')
+
+        debug_msg = '\n=== tran ==='
         for change in transition.changes:
-            logger.debug(change.serialize())
-        logger.debug('')
+            debug_msg += '\n' + str(change.serialize())
+        debug_msg += '\n'
+        logger.debug(debug_msg)
         
         affected_objs = []
         for change in transition.changes:
