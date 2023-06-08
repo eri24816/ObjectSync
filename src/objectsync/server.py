@@ -1,3 +1,5 @@
+import logging
+logger = logging.getLogger(__name__)
 from typing import Dict, TypeVar, Any, Callable
 from chatroom import ChatroomServer, Transition
 from chatroom.topic import Topic, IntTopic, SetTopic, DictTopic
@@ -46,7 +48,7 @@ class Server:
     '''
 
     def _create_object(self, type: str, parent_id, id:str|None=None, serialized:SObjectSerialized|None=None, prebuild_kwargs:Dict[str,Any]={}):
-        print(f'create object: {type} {id}')
+        logger.debug(f'create object: {type} {id}')
         if id is None:
             id = gen_id()
         cls = self._object_types[type]
@@ -68,10 +70,10 @@ class Server:
     
     def _on_transition_done(self, transition:Transition):
         # Find the lowest object to record the transition in
-        print('\n=== tran ===')
+        logger.debug('\n=== tran ===')
         for change in transition.changes:
-            print(change.serialize())
-        print('')
+            logger.debug(change.serialize())
+        logger.debug('')
         
         affected_objs = []
         for change in transition.changes:
@@ -109,7 +111,7 @@ class Server:
         if transition is not None:
             self._chatroom.undo(transition)
         else:
-            print('no transition to undo')
+            logger.debug('no transition to undo')
 
     def _redo(self, target = None):
         if target is None:
@@ -118,7 +120,7 @@ class Server:
         if transition is not None:
             self._chatroom.redo(transition)
         else:
-            print('no transition to redo')
+            logger.debug('no transition to redo')
 
     '''
     Basic methods

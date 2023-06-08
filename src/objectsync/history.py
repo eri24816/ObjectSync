@@ -1,4 +1,6 @@
 from typing import Dict, List
+import logging
+logger = logging.getLogger(__name__)
 from chatroom import Transition
 
 class HistoryItem:
@@ -22,10 +24,10 @@ class History:
             self.chain[self._current_index].done = False
             self._current_index -= 1
 
-            print('\n=== undo ===')
+            logger.debug('\n=== undo ===')
             for change in reversed(self.chain[self._current_index+1].transition.changes):
-                print(change.serialize())
-            print('')
+                logger.debug(change.serialize())
+            logger.debug('')
             return self.chain[self._current_index+1].transition
         else:
             return None
@@ -35,10 +37,10 @@ class History:
             self._current_index += 1
             self.chain[self._current_index].done = True
 
-            print('\n=== redo ===')
+            logger.debug('\n=== redo ===')
             for change in self.chain[self._current_index].transition.changes:
-                print(change.serialize())
-            print('')
+                logger.debug(change.serialize())
+            logger.debug('')
             return self.chain[self._current_index].transition
         else:
             return None

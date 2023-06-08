@@ -1,4 +1,6 @@
 from __future__ import annotations
+import logging
+logger = logging.getLogger(__name__)
 from dataclasses import dataclass
 from mimetypes import init
 from typing import List, Dict, Any, Optional, TypeVar, Union, TYPE_CHECKING, Callable
@@ -92,14 +94,14 @@ class SObject:
     '''
     
     def _add_child(self, child:SObject):
-        print(f"Adding child {child.get_id()} to {self.get_id()}")
+        logger.debug(f"Adding child {child.get_id()} to {self.get_id()}")
         for c in self._children:
             if c.get_id() == child.get_id():
                 raise ValueError(f"Child {child.get_id()} already exists")
         self._children.append(child)
     
     def _remove_child(self, child:SObject):
-        print(f"Removing child {child.get_id()} from {self.get_id()}")
+        logger.debug(f"Removing child {child.get_id()} from {self.get_id()}")
         self._children.remove(child)
 
     '''
@@ -182,7 +184,7 @@ class SObject:
 
         children_serialized = {}
         for child in self._children.copy():
-            print(f"Destroying child {child.get_id()} from {self.get_id()}")
+            logger.debug(f"Destroying child {child.get_id()} from {self.get_id()}")
             child_info = self._server._destroy_object(child.get_id())
             children_serialized[child.get_id()] = child_info['serialized']
 
