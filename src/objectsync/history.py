@@ -26,7 +26,7 @@ class History:
 
             debug_msg = '\n=== undo ===\n'
             for change in reversed(self.chain[self._current_index+1].transition.changes):
-                debug_msg += change.serialize() + '\n'
+                debug_msg += str(change.serialize()) + '\n'
             debug_msg += '\n'
             logger.debug(debug_msg)
 
@@ -41,7 +41,7 @@ class History:
 
             debug_msg = '\n=== redo ===\n'
             for change in self.chain[self._current_index].transition.changes:
-                debug_msg += change.serialize() + '\n'
+                debug_msg += str(change.serialize()) + '\n'
             debug_msg += '\n'
             logger.debug(debug_msg)
 
