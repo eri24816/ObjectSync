@@ -6,9 +6,8 @@ from chatroom.topic import Topic, IntTopic, SetTopic, DictTopic
 from chatroom.change import EventChangeTypes, StringChangeTypes
 
 from objectsync.hierarchy_utils import get_ancestors, lowest_common_ancestor
-from objectsync.count import gen_id
+from objectsync.count import gen_id, set_id_count
 from objectsync.sobject import SObject, SObjectSerialized
-from objectsync.topic import ObjDictTopic, ObjListTopic, ObjSetTopic
 
 class Server:
     def __init__(self, port: int, host:str='localhost', root_object_type:type[SObject]=SObject, prebuild_kwargs = {}) -> None:
@@ -149,6 +148,9 @@ class Server:
     def destroy_object(self, id:str):
         self._chatroom.emit('destroy_object', id = id)
 
+    def set_id_count(self, count:int):
+        set_id_count(count)
+        
     '''
     Encapsulate the chatroom server
     '''
