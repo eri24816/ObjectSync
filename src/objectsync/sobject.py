@@ -20,7 +20,14 @@ class SObjectSerialized:
     type:str
     attributes:Dict[str,Any]
     children:Dict[str,SObjectSerialized]
-
+    
+    def to_dict(self):
+        return {
+            'id':self.id,
+            'type':self.type,
+            'attributes':self.attributes,
+            'children':{child_id:child.to_dict() for child_id,child in self.children.items()}
+        }
 
 class SObject:
     frontend_type = 'Root'
