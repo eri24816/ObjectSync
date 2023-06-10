@@ -7,3 +7,7 @@ def gen_id():
 def set_id_count(new_count:int):
     global count
     count = new_count
+
+def get_id_count():
+    global count
+    return count

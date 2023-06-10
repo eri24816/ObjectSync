@@ -6,7 +6,7 @@ from chatroom.topic import Topic, IntTopic, SetTopic, DictTopic
 from chatroom.change import EventChangeTypes, StringChangeTypes
 
 from objectsync.hierarchy_utils import get_ancestors, lowest_common_ancestor
-from objectsync.count import gen_id, set_id_count
+from objectsync.count import gen_id, get_id_count, set_id_count
 from objectsync.sobject import SObject, SObjectSerialized
 
 class Server:
@@ -150,7 +150,10 @@ class Server:
 
     def set_id_count(self, count:int):
         set_id_count(count)
-        
+
+    def get_id_count(self):
+        return get_id_count()
+
     '''
     Encapsulate the chatroom server
     '''
