@@ -214,3 +214,14 @@ class SObject:
     def has_tag(self, tag):
         return tag in self._tags
         
+    def get_child_of_type(self, type: type[SObject]):
+        for child in self._children:
+            if isinstance(child, type):
+                return child
+        return None
+    
+    def get_children_of_type(self, type: type[SObject]):
+        return [child for child in self._children if isinstance(child, type)]
+    
+    def get_children(self):
+        return self._children.copy()
