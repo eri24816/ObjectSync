@@ -21,6 +21,7 @@ class Server:
         self._objects[root_id] = self._root_object
         self._objects_topic = self.create_topic('_objects',DictTopic,{root_id:'Root'})
         self._object_types : Dict[str,type[SObject]] = {}
+        self._object_types_to_names : Dict[type[SObject],str] = {}
 
         # Link callbacks to chatroom events
         # so these mehtods can be called from both client and server
@@ -67,7 +68,7 @@ class Server:
         serialized = obj.destroy()
         obj.get_parent()._remove_child(obj)
         del self._objects[id]
-        return {'type':obj.__class__.__name__,'parent_id':obj.get_parent().get_id(),'serialized':serialized}
+        return {'type':self._object_types_to_names[obj.__class__],'parent_id':obj.get_parent().get_id(),'serialized':serialized}
     
     def _on_transition_done(self, transition:Transition):
         # Find the lowest object to record the transition in
@@ -129,8 +130,11 @@ class Server:
     Basic methods
     '''
 
-    def register(self, object_type:type[SObject]):
-        self._object_types[object_type.__name__] = object_type
+    def register(self, object_type:type[SObject],name:str=None):
+        if name is None:
+            name = object_type.__name__
+        self._object_types[name] = object_type
+        self._object_types_to_names[object_type] = name
 
     def get_object(self, id:str) -> SObject:
         return self._objects[id]
@@ -143,7 +147,7 @@ class Server:
     
     T=TypeVar('T', bound=SObject)
     def create_object(self, type:type[T], parent_id:str='root', id:str|None = None, serialized:SObjectSerialized|None=None,**prebuild_kwargs) -> T:
-        new_object = self.create_object_s(type.__name__, parent_id, id, serialized, **prebuild_kwargs)
+        new_object = self.create_object_s(self._object_types_to_names[type], parent_id, id, serialized, **prebuild_kwargs)
         assert isinstance(new_object, type)
         return new_object
     
@@ -155,6 +159,12 @@ class Server:
 
     def get_id_count(self):
         return get_id_count()
+    
+    def get_object_type(self, name:str) -> type[SObject]:
+        return self._object_types[name]
+    
+    def get_object_type_name(self, type:type[SObject]) -> str:
+        return self._object_types_to_names[type]
 
     '''
     Encapsulate the chatroom server

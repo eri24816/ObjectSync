@@ -161,7 +161,7 @@ class SObject:
     T = TypeVar("T", bound='SObject')
     def add_child(self, type: type[T], **prebuild_kwargs) -> T:
         id = gen_id()
-        self._server._create_object(type.__name__, self._id, id=id,prebuild_kwargs=prebuild_kwargs)
+        self._server._create_object(self._server.get_object_type_name(self.__class__), self._id, id=id,prebuild_kwargs=prebuild_kwargs)
         new_child = self._server.get_object(id)
         assert isinstance(new_child, type)
         return new_child
@@ -237,7 +237,7 @@ class SObject:
 
         return SObjectSerialized(
             id = self._id,
-            type = self.__class__.__name__,
+            type = self._server.get_object_type_name(self.__class__),
             attributes = attributes_serialized,
             children = children_serialized,
             user_attribute_references=self._user_attribute_references,
@@ -249,7 +249,7 @@ class SObject:
         children_serialized = {child.get_id(): child.serialize() for child in self._children}
         return SObjectSerialized(
             id = self._id,
-            type = self.__class__.__name__,
+            type = self._server.get_object_type_name(self.__class__),
             attributes = attributes_serialized,
             children = children_serialized,
             user_attribute_references=self._user_attribute_references,
