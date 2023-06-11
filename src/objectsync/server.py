@@ -166,7 +166,7 @@ class Server:
         return topic
 
     T = TypeVar('T', bound=Topic)
-    def get_topic(self, topic_name, type: type[T]) -> T:
+    def get_topic(self, topic_name, type: type[T]=Topic) -> T:
         return self._chatroom.topic(topic_name,type)
     
     def remove_topic(self, topic_name):

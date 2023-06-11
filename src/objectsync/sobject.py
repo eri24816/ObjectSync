@@ -20,13 +20,17 @@ class SObjectSerialized:
     type:str
     attributes:Dict[str,Any]
     children:Dict[str,SObjectSerialized]
+    user_attribute_references:Dict[str,str]
+    user_sobject_references:Dict[str,str]
     
     def to_dict(self):
         return {
             'id':self.id,
             'type':self.type,
             'attributes':self.attributes,
-            'children':{child_id:child.to_dict() for child_id,child in self.children.items()}
+            'children':{child_id:child.to_dict() for child_id,child in self.children.items()},
+            'user_attribute_references':self.user_attribute_references,
+            'user_sobject_references':self.user_sobject_references,
         }
 
 class SObject:
@@ -46,6 +50,7 @@ class SObject:
         self.history : History = History()
 
 
+
     def initialize(self, serialized:SObjectSerialized|None=None,prebuild_kwargs:Dict[str,Any]={}):
         if serialized is None:
             self.pre_build(None,**prebuild_kwargs)
@@ -54,8 +59,21 @@ class SObject:
         
         if serialized is None:
             self.build()
+
+            # collect attributes and sobjects references
+            self._user_attribute_references = {}
+            self._user_sobject_references = {}
+            for k, v in self.__dict__.items():
+                if isinstance(v, Topic):
+                    if not v.get_name() in self._attributes:
+                        continue
+                    self._user_attribute_references[k] = v.get_name()
+                elif isinstance(v, SObject):
+                    self._user_sobject_references[k] = v.get_id()
         else:
             self._deserialize(serialized)
+
+
         
         self.post_build()
 
@@ -78,10 +96,29 @@ class SObject:
         '''
 
     def _deserialize(self, serialized:SObjectSerialized):
+
         for attr_name, attr_value in serialized.attributes.items():
             self._attributes[attr_name].set(attr_value)
+
+        # restore attribute references added during build()
+        for ref_name, attr_name in serialized.user_attribute_references.items():
+            if getattr(self, ref_name, None) is not None:
+                continue
+            assert attr_name in self._attributes
+            setattr(self, ref_name, self._server.get_topic(attr_name))
+
         for child_id, child_serialized in serialized.children.items():
             self._server._create_object(child_serialized.type, self._id, child_id, child_serialized)
+
+        # restore attribute references added during build()
+        for ref_name, sobject_id in serialized.user_sobject_references.items():
+            if getattr(self, ref_name, None) is not None:
+                continue
+            setattr(self, ref_name, self._server.get_object(sobject_id))
+
+        # remember these in case we need to serialize this object again
+        self._user_attribute_references = serialized.user_attribute_references
+        self._user_sobject_references = serialized.user_sobject_references
 
     def post_build(self):
         '''
@@ -176,10 +213,13 @@ class SObject:
     
     def emit(self, event_name, **kwargs):
         self._server.emit(f"a/{self._id}/{event_name}", **kwargs)
+        if event_name not in self._attributes:
+            self._attributes[event_name] = self._server.get_topic(f"a/{self._id}/{event_name}")
     
     def on(self, event_name: str, callback: Callable, inverse_callback: Callable|None = None, is_stateful: bool = True):
         self._server.on(f"a/{self._id}/{event_name}", callback, inverse_callback, is_stateful)
-        
+        if event_name not in self._attributes:
+            self._attributes[event_name] = self._server.get_topic(f"a/{self._id}/{event_name}")
     
     def destroy(self)-> SObjectSerialized:
         self._server.remove_topic(self._parent_id.get_name())
@@ -199,7 +239,9 @@ class SObject:
             id = self._id,
             type = self.__class__.__name__,
             attributes = attributes_serialized,
-            children = children_serialized
+            children = children_serialized,
+            user_attribute_references=self._user_attribute_references,
+            user_sobject_references=self._user_sobject_references
         )
     
     def serialize(self) -> SObjectSerialized:
@@ -209,7 +251,9 @@ class SObject:
             id = self._id,
             type = self.__class__.__name__,
             attributes = attributes_serialized,
-            children = children_serialized
+            children = children_serialized,
+            user_attribute_references=self._user_attribute_references,
+            user_sobject_references=self._user_sobject_references
         )
 
     def add_tag(self, tag):
