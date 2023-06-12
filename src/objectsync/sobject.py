@@ -161,7 +161,7 @@ class SObject:
     T = TypeVar("T", bound='SObject')
     def add_child(self, type: type[T], **prebuild_kwargs) -> T:
         id = gen_id()
-        self._server._create_object(self._server.get_object_type_name(self.__class__), self._id, id=id,prebuild_kwargs=prebuild_kwargs)
+        self._server._create_object(self._server.get_object_type_name(type), self._id, id=id,prebuild_kwargs=prebuild_kwargs)
         new_child = self._server.get_object(id)
         assert isinstance(new_child, type)
         return new_child
