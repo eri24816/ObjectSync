@@ -265,13 +265,15 @@ class SObject:
     def has_tag(self, tag):
         return tag in self._tags
         
-    def get_child_of_type(self, type: type[SObject]):
+    T2 = TypeVar("T2", bound='SObject')
+    def get_child_of_type(self, type: type[T2])->T2:
         for child in self._children:
             if isinstance(child, type):
                 return child
         return None
     
-    def get_children_of_type(self, type: type[SObject]):
+    T3=TypeVar("T3", bound='SObject')
+    def get_children_of_type(self, type: type[T3])-> list[T3]:
         return [child for child in self._children if isinstance(child, type)]
     
     def get_children(self):

@@ -1,6 +1,6 @@
 import logging
 logger = logging.getLogger(__name__)
-from typing import Dict, TypeVar, Any, Callable
+from typing import Dict, List, TypeVar, Any, Callable
 from chatroom import ChatroomServer, Transition
 from chatroom.topic import Topic, IntTopic, SetTopic, DictTopic
 from chatroom.change import EventChangeTypes, StringChangeTypes
@@ -136,8 +136,19 @@ class Server:
         self._object_types[name] = object_type
         self._object_types_to_names[object_type] = name
 
+    def unregister(self, object_type:type[SObject]):
+        # check if exists object of this type
+        for obj in self._objects.values():
+            if isinstance(obj,object_type):
+                raise ValueError(f'Cannot unregister object type {self._object_types_to_names[object_type]} with existing objects')
+        del self._object_types[self._object_types_to_names[object_type]]
+        del self._object_types_to_names[object_type]
+
     def get_object(self, id:str) -> SObject:
         return self._objects[id]
+    
+    def get_objects(self) -> List[SObject]:
+        return list(self._objects.values())
     
     def create_object_s(self, type:str, parent_id:str, id:str|None = None, serialized:SObjectSerialized|None=None,**prebuild_kwargs) -> SObject:
         if id is None:
