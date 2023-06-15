@@ -139,8 +139,8 @@ class Server:
     def unregister(self, object_type:type[SObject]):
         # check if exists object of this type
         for obj in self._objects.values():
-            if isinstance(obj,object_type):
-                raise ValueError(f'Cannot unregister object type {self._object_types_to_names[object_type]} with existing objects')
+            if type(obj) == object_type:
+                raise ValueError(f'Cannot unregister object type {self._object_types_to_names[object_type]} with existing object {obj.get_id()}')
         del self._object_types[self._object_types_to_names[object_type]]
         del self._object_types_to_names[object_type]
 
