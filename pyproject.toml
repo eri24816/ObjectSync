@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "objectsync"
-version = "0.3.1"
+version = "0.3.2"
 description = ""
 authors = ["peterxcli <peterxcli@gmail.com>","eri24816 <a931eric@gmail.com>"]
 
