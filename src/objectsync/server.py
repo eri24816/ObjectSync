@@ -21,7 +21,7 @@ class Server:
         self._objects[root_id] = self._root_object
         self._objects_topic = self.create_topic('_objects',DictTopic,{root_id:'Root'})
         self._object_types : Dict[str,type[SObject]] = {}
-        self._object_types_to_names : Dict[type[SObject],str] = {}
+        self._object_types_to_names : Dict[type[SObject],str] = {SObject:'SObject'}
 
         # Link callbacks to chatroom events
         # so these mehtods can be called from both client and server
@@ -133,16 +133,31 @@ class Server:
     def register(self, object_type:type[SObject],name:str=None):
         if name is None:
             name = object_type.__name__
+        if self._object_types.get(name) is not None:
+            raise ValueError(f'Object type {name} already exists')
+        if self._object_types_to_names.get(object_type) is not None:
+            raise ValueError(f'Object type {object_type} already exists')
         self._object_types[name] = object_type
         self._object_types_to_names[object_type] = name
 
-    def unregister(self, object_type:type[SObject]):
+    def unregister(self, object_type:type[SObject]|str):
+        
+        if isinstance(object_type,str):
+            object_type_name = object_type
+            object_type = self._object_types[object_type]
+
+        else:
+            object_type_name = self._object_types_to_names[object_type]
+
         # check if exists object of this type
         for obj in self._objects.values():
-            if type(obj) == object_type:
+            if obj.get_type_name() == object_type_name:
                 raise ValueError(f'Cannot unregister object type {self._object_types_to_names[object_type]} with existing object {obj.get_id()}')
-        del self._object_types[self._object_types_to_names[object_type]]
+        del self._object_types[object_type_name]
         del self._object_types_to_names[object_type]
+
+    def get_all_node_types(self)->Dict[str,type[SObject]]:
+        return self._object_types.copy()
 
     def get_object(self, id:str) -> SObject:
         return self._objects[id]
@@ -176,6 +191,9 @@ class Server:
     
     def get_object_type_name(self, type:type[SObject]) -> str:
         return self._object_types_to_names[type]
+    
+    def get_root_object(self) -> SObject:
+        return self._objects['root']
 
     '''
     Encapsulate the chatroom server

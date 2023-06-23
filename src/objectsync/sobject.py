@@ -3,7 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 from dataclasses import dataclass
 from mimetypes import init
-from typing import List, Dict, Any, Optional, TypeVar, Union, TYPE_CHECKING, Callable
+from typing import List, Dict, Any, Optional, Self, TypeVar, Union, TYPE_CHECKING, Callable
 import typing
 from chatroom.topic import SetTopic, Topic, IntTopic, StringTopic, DictTopic, ListTopic
 from objectsync.topic import ObjDictTopic, ObjListTopic, ObjSetTopic, ObjTopic
@@ -110,7 +110,7 @@ class SObject:
         for child_id, child_serialized in serialized.children.items():
             self._server._create_object(child_serialized.type, self._id, child_id, child_serialized)
 
-        # restore attribute references added during build()
+        # restore sobject references added during build()
         for ref_name, sobject_id in serialized.user_sobject_references.items():
             if getattr(self, ref_name, None) is not None:
                 continue
@@ -278,3 +278,25 @@ class SObject:
     
     def get_children(self):
         return self._children.copy()
+    
+    def get_type_name(self):
+        return self._server.get_object_type_name(self.__class__)
+    
+    T4 = TypeVar("T4", bound='SObject')
+    def top_down_search(self, accept: Callable[['SObject'], bool]|None = None,stop: Callable[['SObject'], bool]|None = None, type:type[T4]=Self)-> list[T4]:
+        result = []
+        if type is Self:
+            type = self.__class__ # type: ignore
+        if isinstance(self, type):
+            if accept is None or accept(self):
+                result.append(self)
+        if stop is None or not stop(self):
+            for child in self._children:
+                result += child.top_down_search(accept, stop, type)
+        return result
+    
+    def __str__(self) -> str:
+        return f"{self.get_type_name()}({self._id})"
+    
+    def __repr__(self) -> str:
+        return self.__str__()
