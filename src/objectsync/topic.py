@@ -5,14 +5,33 @@ from chatroom.utils import Action
 from chatroom.topic import ListTopic, DictTopic, SetTopic, Topic, StringTopic
 from typing import TypeVar, Generic
 
+from objectsync.utils import camel_to_snake
+
 if TYPE_CHECKING:
     from objectsync.sobject import SObject
 
-T = TypeVar('T', bound='SObject')
-class ObjTopic(Generic[T]):
+class WrappedTopic:
     @classmethod
     def get_type_name(cls):
-        return 'string'
+        return camel_to_snake(cls.__name__[:-5])
+    
+    def __init__(self) -> None:
+        self._topic : Topic
+
+    def get_name(self):
+        return self._topic.get_name()
+    
+    def is_stateful(self):
+        return self._topic.is_stateful()
+    
+    def get_raw(self):
+        return self._topic.get()
+    
+    def set(self, value):
+        self._topic.set(value)
+
+T = TypeVar('T', bound='SObject')
+class ObjTopic(Generic[T],WrappedTopic):
     def __init__(self, topic: StringTopic,map: Callable[[str],T]):
         self._topic = topic
         self._map : Callable[[str],T]|None = map
@@ -37,12 +56,9 @@ class ObjTopic(Generic[T]):
         return self.map(self._topic.get())
 
 T = TypeVar('T', bound='SObject')
-class ObjListTopic(Generic[T]):
-    @classmethod
-    def get_type_name(cls):
-        return 'list'
+class ObjListTopic(Generic[T],WrappedTopic):
     def __init__(self, topic: ListTopic,map: Callable[[str],T]):
-        self._topic = topic
+        self._topic:ListTopic = topic
         self._map : Callable[[str],T]|None = map
         self.on_set = Action()
         self.on_set2 = Action()
@@ -90,12 +106,9 @@ class ObjListTopic(Generic[T]):
         return [self._map(x) for x in self._topic.get()]
 
 T = TypeVar('T', bound='SObject')
-class ObjSetTopic(Generic[T]):
-    @classmethod
-    def get_type_name(cls):
-        return 'set'
+class ObjSetTopic(Generic[T],WrappedTopic):
     def __init__(self, topic: SetTopic,map: Callable[[str],T]):
-        self._topic = topic
+        self._topic:SetTopic = topic
         self._map : Callable[[str],T]|None = map
         self.on_set = Action()
         self.on_set2 = Action()
@@ -124,12 +137,9 @@ class ObjSetTopic(Generic[T]):
         return {self._map(x) for x in self._topic.get()}
 
 T = TypeVar('T', bound='SObject')    
-class ObjDictTopic(Generic[T]):
-    @classmethod
-    def get_type_name(cls):
-        return 'dict'
+class ObjDictTopic(Generic[T],WrappedTopic):
     def __init__(self, topic: DictTopic,map: Callable[[str],T]):
-        self._topic = topic
+        self._topic:DictTopic = topic
         self._map : Callable[[str],T]|None = map
 
         self.on_set = Action()

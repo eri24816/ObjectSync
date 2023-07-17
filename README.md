@@ -4,6 +4,10 @@ ObjectSync is a communication framework designed for real-time applications, pro
 
 The ObjectSync client source code is at https://github.com/eri24816/ObjectSyncClient_ts
 
+## Lifecycle of SObject changed from v0.4.0
+
+![Image](https://i.imgur.com/CwYle7o.png)
+
 ## Introduction
 
 ObjectSync enables real-time synchronization of state between a server and multiple clients. It achieves this by maintaining a hierarchy of `SObject`s, which represent synchronized objects. Each `SObject` contains several attributes that can be considered as variables or properties of the object.

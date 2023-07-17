@@ -1,4 +1,6 @@
 import logging
+
+from objectsync.utils import NameSpace
 logger = logging.getLogger(__name__)
 from typing import Dict, List, TypeVar, Any, Callable
 from chatroom import ChatroomServer, Transition
@@ -10,10 +12,9 @@ from objectsync.count import gen_id, get_id_count, set_id_count
 from objectsync.sobject import SObject, SObjectSerialized
 
 class Server:
-    def __init__(self, port: int, host:str='localhost', root_object_type:type[SObject]=SObject, prebuild_kwargs = {}) -> None:
+    def __init__(self, port: int, host:str='localhost', root_object_type:type[SObject]=SObject) -> None:
         self._port = port
         self._host = host
-        self._prebuild_kwargs = prebuild_kwargs
         self._chatroom = ChatroomServer(port,host,on_transition_done=self._on_transition_done)
         self._objects : Dict[str,SObject] = {}
         root_id = 'root'
@@ -24,7 +25,7 @@ class Server:
         self._object_types_to_names : Dict[type[SObject],str] = {SObject:'SObject'}
 
         # Link callbacks to chatroom events
-        # so these mehtods can be called from both client and server
+        # so these methods can be called from both client and server
         self._chatroom.on('create_object', self._create_object, self._destroy_object)
         self._chatroom.on('destroy_object', self._destroy_object, self._create_object)
 
@@ -37,8 +38,9 @@ class Server:
         self.get_client_id_count = self._chatroom.get_client_id_count
 
         self.do_after_transition = self._chatroom.do_after_transition
-        
 
+        self.globals = NameSpace()
+        
     async def serve(self):
         '''
         Entry point for the server
@@ -49,14 +51,14 @@ class Server:
     Callbacks
     '''
 
-    def _create_object(self, type: str, parent_id, id:str|None=None, serialized:SObjectSerialized|None=None, prebuild_kwargs:Dict[str,Any]={}):
+    def _create_object(self, type: str, parent_id, id:str|None=None, serialized:SObjectSerialized|None=None, build_kwargs:Dict[str,Any]={}):
         logger.debug(f'create object: {type} {id}')
         if id is None:
             id = gen_id()
         cls = self._object_types[type]
         new_object = cls(self,id,parent_id)
         self._objects[id] = new_object
-        new_object.initialize(serialized,prebuild_kwargs={**self._prebuild_kwargs,**prebuild_kwargs})
+        new_object.initialize(serialized,build_kwargs=build_kwargs)
         new_object.get_parent()._add_child(new_object)
         assert new_object.get_parent().get_id() == parent_id
         self._objects_topic.add(id,cls.frontend_type)
@@ -130,7 +132,7 @@ class Server:
     Basic methods
     '''
 
-    def register(self, object_type:type[SObject],name:str=None):
+    def register(self, object_type:type[SObject],name:str|None=None):
         if name is None:
             name = object_type.__name__
         if self._object_types.get(name) is not None:
@@ -165,15 +167,15 @@ class Server:
     def get_objects(self) -> List[SObject]:
         return list(self._objects.values())
     
-    def create_object_s(self, type:str, parent_id:str, id:str|None = None, serialized:SObjectSerialized|None=None,**prebuild_kwargs) -> SObject:
+    def create_object_s(self, type:str, parent_id:str, id:str|None = None, serialized:SObjectSerialized|None=None,**build_kwargs) -> SObject:
         if id is None:
             id = gen_id()
-        self._chatroom.emit('create_object', type = type, parent_id = parent_id, id = id, serialized = serialized, prebuild_kwargs=prebuild_kwargs)
+        self._chatroom.emit('create_object', type = type, parent_id = parent_id, id = id, serialized = serialized, build_kwargs=build_kwargs)
         return self.get_object(id)
     
     T=TypeVar('T', bound=SObject)
-    def create_object(self, type:type[T], parent_id:str='root', id:str|None = None, serialized:SObjectSerialized|None=None,**prebuild_kwargs) -> T:
-        new_object = self.create_object_s(self._object_types_to_names[type], parent_id, id, serialized, **prebuild_kwargs)
+    def create_object(self, type:type[T], parent_id:str='root', id:str|None = None, serialized:SObjectSerialized|None=None,**build_kwargs) -> T:
+        new_object = self.create_object_s(self._object_types_to_names[type], parent_id, id, serialized, **build_kwargs)
         assert isinstance(new_object, type)
         return new_object
     
