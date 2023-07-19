@@ -32,6 +32,8 @@ class Server:
         self._chatroom.register_service('undo', self._undo)
         self._chatroom.register_service('redo', self._redo)
 
+        self.register_service = self._chatroom.register_service
+
         self.record = self._chatroom.record
         '''Use this context manager to package multiple changes into a single transition to create resonable undo/redo behavior'''
         self.set_client_id_count = self._chatroom.set_client_id_count
