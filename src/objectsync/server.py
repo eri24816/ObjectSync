@@ -54,6 +54,10 @@ class Server:
     '''
 
     def _create_object(self, type: str, parent_id, id:str|None=None, serialized:SObjectSerialized|None=None, build_kwargs:Dict[str,Any]={}):
+        '''
+        This method is "raw" create object. It does not record the creation as a transition.
+        To create an object and record the creation as a transition, use create_object or create_object_s.
+        '''
         logger.debug(f'create object: {type} {id}')
         if id is None:
             id = gen_id()

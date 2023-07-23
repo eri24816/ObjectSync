@@ -208,6 +208,9 @@ class SObject:
         self._server.on(f"a/{self._id}/{event_name}", callback, inverse_callback, is_stateful)
         if event_name not in self._attributes:
             self._attributes[event_name] = self._server.get_topic(f"a/{self._id}/{event_name}")
+
+    def register_service(self, service_name: str, callback: Callable, pass_sender: bool = False):
+        self._server.register_service(f"{self._id}/{service_name}", callback, pass_sender)
     
     def destroy(self)-> SObjectSerialized:
         self._server.remove_topic(self._parent_id.get_name())
@@ -279,6 +282,12 @@ class SObject:
     
     def get_children(self):
         return self._children.copy()
+    
+    def get_child_by_id(self, id:str)->SObject:
+        for child in self._children:
+            if child.get_id() == id:
+                return child
+        raise ValueError(f"Child {id} not found")
     
     def get_type_name(self):
         return self._server.get_object_type_name(self.__class__)
