@@ -74,7 +74,13 @@ class Server:
         self._objects_topic.remove(id)
         obj = self._objects[id]
         serialized = obj.destroy()
-        obj.get_parent()._remove_child(obj)
+
+        # Normally, obj should be in the parent's children list, but if the _destroy_object is called due to 
+        # a failure in obj.initialize (which is called in _create_object), then the parent will not have the child.
+        # Check if the parent has the child before removing it to avoid error.
+        if obj.get_parent().has_child(obj):
+            obj.get_parent()._remove_child(obj)
+
         del self._objects[id]
         return {'type':self._object_types_to_names[obj.__class__],'parent_id':obj.get_parent().get_id(),'serialized':serialized}
     

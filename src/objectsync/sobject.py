@@ -268,6 +268,9 @@ class SObject:
 
     def has_tag(self, tag):
         return tag in self._tags
+    
+    def has_child(self, child:SObject):
+        return child in self._children
         
     T2 = TypeVar("T2", bound='SObject')
     def get_child_of_type(self, type: type[T2])->T2:
