@@ -15,7 +15,7 @@ class Server:
     def __init__(self, port: int, host:str='localhost', root_object_type:type[SObject]=SObject) -> None:
         self._port = port
         self._host = host
-        self._chatroom = ChatroomServer(port,host,on_transition_done=self._on_transition_done)
+        self._chatroom = ChatroomServer(port,host,transition_callback=self._transition_callback)
         self._objects : Dict[str,SObject] = {}
         root_id = 'root'
         self._root_object = root_object_type(self,root_id,'')
@@ -84,7 +84,7 @@ class Server:
         del self._objects[id]
         return {'type':self._object_types_to_names[obj.__class__],'parent_id':obj.get_parent().get_id(),'serialized':serialized}
     
-    def _on_transition_done(self, transition:Transition):
+    def _transition_callback(self, transition:Transition):
         # Find the lowest object to record the transition in
 
         debug_msg = '\n=== tran ==='

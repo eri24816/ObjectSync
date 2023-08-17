@@ -38,10 +38,10 @@ class ObjTopic(Generic[T],WrappedTopic):
         self.on_set = Action()
         self.on_set2 = Action()
 
-        self._topic.on_set += lambda new_value: self.on_set(self.map(new_value))\
-            if len(self.on_set._callbacks) > 0 else None # Must have this check to avoid error when building (children not yet created)
-        self._topic.on_set2 += lambda old_value, new_value: self.on_set2(self.map(old_value), self.map(new_value))\
-            if len(self.on_set2._callbacks) > 0 else None
+        self._topic.on_set.add_raw(lambda auto, new_value: self.on_set.invoke(auto,self.map(new_value))\
+            if self.on_set.num_callbacks > 0 else None) # Must have this check to avoid error when building (children not yet created)
+        self._topic.on_set2.add_raw(lambda auto, old_value, new_value: self.on_set2.invoke(auto,self.map(old_value), self.map(new_value))\
+            if self.on_set2.num_callbacks > 0 else None)
 
     def map(self,value:str):
         try:
@@ -65,14 +65,14 @@ class ObjListTopic(Generic[T],WrappedTopic):
         self.on_insert = Action()
         self.on_pop = Action()
 
-        self._topic.on_set += lambda new_value: self.on_set([self._map(x) for x in new_value])\
-            if len(self.on_set._callbacks) > 0 else None
-        self._topic.on_set2 += lambda old_value, new_value: self.on_set2([self._map(x) for x in old_value], [self._map(x) for x in new_value])\
-            if len(self.on_set2._callbacks) > 0 else None
-        self._topic.on_insert += lambda value, index: self.on_insert(self._map(value), index )\
-            if len(self.on_insert._callbacks) > 0 else None
-        self._topic.on_pop += lambda value, index: self.on_pop(self._map(value), index )\
-            if len(self.on_pop._callbacks) > 0 else None
+        self._topic.on_set.add_raw(lambda auto, new_value: self.on_set.invoke(auto,[self._map(x) for x in new_value])\
+            if self.on_set.num_callbacks > 0 else None)
+        self._topic.on_set2.add_raw(lambda auto, old_value, new_value: self.on_set2.invoke(auto,[self._map(x) for x in old_value], [self._map(x) for x in new_value])\
+            if self.on_set2.num_callbacks > 0 else None)
+        self._topic.on_insert.add_raw(lambda auto, value, index: self.on_insert.invoke(auto,self._map(value), index )\
+            if self.on_insert.num_callbacks > 0 else None)
+        self._topic.on_pop.add_raw(lambda auto, value, index: self.on_pop.invoke(auto,self._map(value), index )\
+            if self.on_pop.num_callbacks > 0 else None)
 
     def set(self, objects:List[T]):
         return self._topic.set([x.get_id() for x in objects])
@@ -115,14 +115,14 @@ class ObjSetTopic(Generic[T],WrappedTopic):
         self.on_append = Action()
         self.on_remove = Action()
 
-        self._topic.on_set += lambda new_value: self.on_set([self._map(x) for x in new_value])\
-            if len(self.on_set._callbacks) > 0 else None
-        self._topic.on_set2 += lambda old_value, new_value: self.on_set2([self._map(x) for x in old_value], [self._map(x) for x in new_value])\
-            if len(self.on_set2._callbacks) > 0 else None
-        self._topic.on_append += lambda value: self.on_append(self._map(value))\
-            if len(self.on_append._callbacks) > 0 else None
-        self._topic.on_remove += lambda value: self.on_remove(self._map(value))\
-            if len(self.on_remove._callbacks) > 0 else None
+        self._topic.on_set.add_raw(lambda auto, new_value: self.on_set.invoke(auto,[self._map(x) for x in new_value])\
+            if self.on_set.num_callbacks > 0 else None)
+        self._topic.on_set2.add_raw(lambda auto, old_value, new_value: self.on_set2.invoke(auto,[self._map(x) for x in old_value], [self._map(x) for x in new_value])\
+            if self.on_set2.num_callbacks > 0 else None)
+        self._topic.on_append.add_raw(lambda auto, value: self.on_append.invoke(auto,self._map(value))\
+            if self.on_append.num_callbacks > 0 else None)
+        self._topic.on_remove.add_raw(lambda auto, value: self.on_remove.invoke(auto,self._map(value))\
+            if self.on_remove.num_callbacks > 0 else None)
 
     def set(self, objects:List[T]):
         return self._topic.set([x.get_id() for x in objects])
@@ -148,16 +148,16 @@ class ObjDictTopic(Generic[T],WrappedTopic):
         self.on_remove = Action()
         self.on_change_value = Action()
         
-        self._topic.on_set += lambda new_value: self.on_set({k:self._map(v) for k,v in new_value.items()})\
-            if len(self.on_set._callbacks) > 0 else None
-        self._topic.on_set2 += lambda old_value, new_value: self.on_set2({k:self._map(v) for k,v in old_value.items()}, {k:self._map(v) for k,v in new_value.items()})\
-            if len(self.on_set2._callbacks) > 0 else None
-        self._topic.on_add += lambda key, value: self.on_add(key, self._map(value))\
-            if len(self.on_add._callbacks) > 0 else None
-        self._topic.on_remove += lambda key, value: self.on_remove(key, self._map(value))\
-            if len(self.on_remove._callbacks) > 0 else None
-        self._topic.on_change_value += lambda key, new_value: self.on_change_value(key, self._map(new_value))\
-            if len(self.on_change_value._callbacks) > 0 else None
+        self._topic.on_set.add_raw(lambda auto, new_value: self.on_set.invoke(auto,{k:self._map(v) for k,v in new_value.items()})\
+            if self.on_set.num_callbacks > 0 else None)
+        self._topic.on_set2.add_raw(lambda auto, old_value, new_value: self.on_set2.invoke(auto,{k:self._map(v) for k,v in old_value.items()}, {k:self._map(v) for k,v in new_value.items()})\
+            if self.on_set2.num_callbacks > 0 else None)
+        self._topic.on_add.add_raw(lambda auto, key, value: self.on_add.invoke(auto,key, self._map(value))\
+            if self.on_add.num_callbacks > 0 else None)
+        self._topic.on_remove.add_raw(lambda auto, key, value: self.on_remove.invoke(auto,key, self._map(value))\
+            if self.on_remove.num_callbacks > 0 else None)
+        self._topic.on_change_value.add_raw(lambda auto, key, new_value: self.on_change_value.invoke(auto,key, self._map(new_value))\
+            if self.on_change_value.num_callbacks > 0 else None)
 
     def set(self, objects:dict):
         return self._topic.set({k:v.get_id() for k,v in objects.items()})
@@ -180,10 +180,10 @@ class ObjDictTopic(Generic[T],WrappedTopic):
     def __delitem__(self, key):
         return self._topic.__delitem__(key)
     
-    def notify_listeners(self, change: Change, old_value: dict, new_value: dict):
+    def notify_listeners(self,auto:bool, change: Change, old_value: dict, new_value: dict):
         old_value = {k:self._map(v) for k,v in old_value.items()}
         new_value = {k:self._map(v) for k,v in new_value.items()}
-        return self._topic.notify_listeners(change, old_value, new_value)
+        return self._topic.notify_listeners(auto,change, old_value, new_value)
     
     def get(self):
         return {k:self._map(v) for k,v in self._topic.get().items()}

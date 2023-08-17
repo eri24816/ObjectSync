@@ -35,6 +35,9 @@ class SObjectSerialized:
             'user_sobject_references':self.user_sobject_references,
         }
 
+    def __dict__(self):
+        return self.to_dict()
+
 class SObject:
     frontend_type = 'Root'
 
@@ -151,10 +154,13 @@ class SObject:
     T = TypeVar("T", bound='SObject')
     def add_child(self, type: type[T], **build_kwargs) -> T:
         id = gen_id()
-        self._server._create_object(self._server.get_object_type_name(type), self._id, id=id,build_kwargs=build_kwargs)
+        self._server.create_object(type, self._id, id=id, **build_kwargs)
         new_child = self._server.get_object(id)
         assert isinstance(new_child, type)
         return new_child
+    
+    def remove_child(self, child:SObject):
+        self._server.destroy_object(child.get_id())
     
     def get_parent(self):
         if self._id == 'root':
@@ -211,8 +217,14 @@ class SObject:
 
     def register_service(self, service_name: str, callback: Callable, pass_sender: bool = False):
         self._server.register_service(f"{self._id}/{service_name}", callback, pass_sender)
+
+    def remove(self):
+        self._server.destroy_object(self._id)
     
     def destroy(self)-> SObjectSerialized:
+        '''
+        Caution: To not call this method directly. Use remove() instead.
+        '''
         self._server.remove_topic(self._parent_id.get_name())
         self._server.remove_topic(self._tags.get_name())
 
