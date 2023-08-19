@@ -154,7 +154,7 @@ class ObjDictTopic(Generic[T],WrappedTopic):
             if self.on_set2.num_callbacks > 0 else None)
         self._topic.on_add.add_raw(lambda auto, key, value: self.on_add.invoke(auto,key, self._map(value))\
             if self.on_add.num_callbacks > 0 else None)
-        self._topic.on_remove.add_raw(lambda auto, key, value: self.on_remove.invoke(auto,key, self._map(value))\
+        self._topic.on_remove.add_raw(lambda auto, key: self.on_remove.invoke(auto,key)\
             if self.on_remove.num_callbacks > 0 else None)
         self._topic.on_change_value.add_raw(lambda auto, key, new_value: self.on_change_value.invoke(auto,key, self._map(new_value))\
             if self.on_change_value.num_callbacks > 0 else None)
@@ -170,6 +170,9 @@ class ObjDictTopic(Generic[T],WrappedTopic):
     
     def remove(self, key):
         return self._topic.remove(key)
+    
+    def pop(self, key):
+        return self._map(self._topic.pop(key))
 
     def __getitem__(self, key):
         return self._map(self._topic.__getitem__(key))

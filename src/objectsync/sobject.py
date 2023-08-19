@@ -56,7 +56,7 @@ class SObject:
 
 
     def initialize(self, serialized:SObjectSerialized|None=None,build_kwargs:Dict[str,Any]={}):
-        
+        self.is_new = serialized is None
         if serialized is None:
             self.build(**build_kwargs)
 
