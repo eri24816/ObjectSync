@@ -55,7 +55,7 @@ class SObject:
         self.history : History = History()
 
 
-    def initialize(self, serialized:SObjectSerialized|None=None,build_kwargs:Dict[str,Any]={}):
+    def initialize(self, serialized:SObjectSerialized|None=None,build_kwargs:Dict[str,Any]={},call_init:bool=True):
         self.is_new = serialized is None
         if serialized is None:
             self.build(**build_kwargs)
@@ -73,7 +73,8 @@ class SObject:
         else:
             self._deserialize(serialized)
         
-        self.init()
+        if call_init:
+            self.init()
 
     def build(self,**kwargs):
         '''
@@ -205,6 +206,14 @@ class SObject:
         self._attributes[topic_name] = new_attr
         return new_attr # type: ignore
     
+    def get_attribute(self, topic_name) -> Topic|WrappedTopic:
+        if topic_name not in self._attributes:
+            raise ValueError(f"Attribute '{topic_name}' does not exist")
+        return self._attributes[topic_name]
+    
+    def has_attribute(self, topic_name):
+        return topic_name in self._attributes
+    
     def emit(self, event_name, **kwargs):
         self._server.emit(f"a/{self._id}/{event_name}", **kwargs)
         if event_name not in self._attributes:
@@ -223,7 +232,7 @@ class SObject:
     
     def destroy(self)-> SObjectSerialized:
         '''
-        Caution: To not call this method directly. Use remove() instead.
+        Caution: Do not call this method directly. Use remove() instead.
         '''
         self._server.remove_topic(self._parent_id.get_name())
         self._server.remove_topic(self._tags.get_name())

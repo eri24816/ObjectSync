@@ -27,6 +27,9 @@ class WrappedTopic:
     def get_raw(self):
         return self._topic.get()
     
+    def set_raw(self, value):
+        return self._topic.set(value)
+    
     def set(self, value):
         self._topic.set(value)
 

@@ -55,8 +55,8 @@ class Server:
 
     def _create_object(self, type: str, parent_id, id:str|None=None, serialized:SObjectSerialized|None=None, build_kwargs:Dict[str,Any]={}):
         '''
-        This method is "raw" create object. It does not record the creation as a transition.
-        To create an object and record the creation as a transition, use create_object or create_object_s.
+        This method is "raw" create object. It does not record the creation in a transition.
+        To create an object and record the creation in a transition, use create_object or create_object_s.
         '''
         logger.debug(f'create object: {type} {id}')
         if id is None:
@@ -64,11 +64,13 @@ class Server:
         cls = self._object_types[type]
         new_object = cls(self,id,parent_id)
         self._objects[id] = new_object
-        new_object.initialize(serialized,build_kwargs=build_kwargs)
+        new_object.initialize(serialized,build_kwargs=build_kwargs,call_init=False)
+        temp = new_object.serialize()
         new_object.get_parent()._add_child(new_object)
         assert new_object.get_parent().get_id() == parent_id
         self._objects_topic.add(id,cls.frontend_type)
-        return {'id':id,'type':type,'parent_id':parent_id,'serialized':new_object.serialize()}
+        new_object.init()
+        return {'id':id,'type':type,'parent_id':parent_id,'serialized':temp}
     
     def _destroy_object(self, id, **kwargs):
         self._objects_topic.remove(id)
