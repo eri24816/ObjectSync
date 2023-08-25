@@ -219,8 +219,8 @@ class SObject:
         if event_name not in self._attributes:
             self._attributes[event_name] = self._server.get_topic(f"a/{self._id}/{event_name}")
     
-    def on(self, event_name: str, callback: Callable, inverse_callback: Callable|None = None, is_stateful: bool = True):
-        self._server.on(f"a/{self._id}/{event_name}", callback, inverse_callback, is_stateful)
+    def on(self, event_name: str, callback: Callable, inverse_callback: Callable|None = None, is_stateful: bool = True,auto=False):
+        self._server.on(f"a/{self._id}/{event_name}", callback, inverse_callback, is_stateful,auto=auto)
         if event_name not in self._attributes:
             self._attributes[event_name] = self._server.get_topic(f"a/{self._id}/{event_name}")
 

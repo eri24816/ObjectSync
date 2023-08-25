@@ -227,8 +227,8 @@ class Server:
     def remove_topic(self, topic_name):
         self._chatroom.remove_topic(topic_name)
 
-    def on(self, event_name: str, callback: Callable, inverse_callback: Callable|None = None, is_stateful: bool = True, *args, **kwargs: None):
-        self._chatroom.on(event_name, callback, inverse_callback, is_stateful)
+    def on(self, event_name: str, callback: Callable, inverse_callback: Callable|None = None, is_stateful: bool = True,auto=False, *args, **kwargs: None):
+        self._chatroom.on(event_name, callback, inverse_callback, is_stateful,auto=auto)
 
     def emit(self, event_name, **kwargs):
         self._chatroom.emit(event_name, **kwargs)
