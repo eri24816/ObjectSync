@@ -171,8 +171,8 @@ class ObjDictTopic(Generic[T],WrappedTopic):
     def add(self, key, value:T):
         return self._topic.add(key, value.get_id())
     
-    def remove(self, key):
-        return self._topic.remove(key)
+    def remove(self, value):
+        return self._topic.remove(value.get_id())
     
     def pop(self, key):
         return self._map(self._topic.pop(key))

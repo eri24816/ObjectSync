@@ -160,7 +160,7 @@ class SObject:
         assert isinstance(new_child, type)
         return new_child
     
-    def remove_child(self, child:SObject):
+    def remove_child(self, child:SObject): # Maybe deprecate this
         self._server.destroy_object(child.get_id())
     
     def get_parent(self):
