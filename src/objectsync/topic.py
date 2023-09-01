@@ -186,6 +186,9 @@ class ObjDictTopic(Generic[T],WrappedTopic):
     def __delitem__(self, key):
         return self._topic.__delitem__(key)
     
+    def __contains__(self,key:str):
+        return key in self._topic
+    
     def notify_listeners(self,auto:bool, change: Change, old_value: dict, new_value: dict):
         old_value = {k:self._map(v) for k,v in old_value.items()}
         new_value = {k:self._map(v) for k,v in new_value.items()}

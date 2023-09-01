@@ -73,7 +73,7 @@ class Server:
         return {'id':id,'type':type,'parent_id':parent_id,'serialized':temp}
     
     def _destroy_object(self, id, **kwargs):
-        self._objects_topic.remove(id)
+        self._objects_topic.pop(id)
         obj = self._objects[id]
         serialized = obj.destroy()
 
