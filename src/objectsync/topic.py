@@ -138,6 +138,15 @@ class ObjSetTopic(Generic[T],WrappedTopic):
     
     def get(self):
         return {self._map(x) for x in self._topic.get()}
+    
+    def __len__(self):
+        return self._topic.__len__()
+    
+    def __iter__(self):
+        return (self._map(x) for x in self._topic.__iter__())
+    
+    def __contains__(self, item):
+        return self._topic.__contains__(item.get_id())
 
 T = TypeVar('T', bound='SObject')    
 class ObjDictTopic(Generic[T],WrappedTopic):
