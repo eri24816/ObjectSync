@@ -175,32 +175,37 @@ class SObject:
             origin_type = topic_type
         if topic_name in self._attributes:
             raise ValueError(f"Attribute '{topic_name}' already exists")
+        def map_id_to_object(id):
+            if self._server.has_object(id):
+                return self._server.get_object(id)
+            else:
+                return None
         if origin_type == ObjTopic:
             if init_value is not None and isinstance(init_value, SObject):
                 init_value = init_value.get_id()
             inner = self.add_attribute(topic_name, StringTopic, init_value, is_stateful)
-            new_attr = ObjTopic(inner, self._server.get_object)
+            new_attr = ObjTopic(inner, map_id_to_object)
         elif origin_type == ObjDictTopic:
             if init_value is not None:
                 assert isinstance(init_value, Dict)
                 if len(init_value)>0 and isinstance(list(init_value.values())[0], SObject):
                     init_value = {key: value.get_id() for key, value in init_value.items()}
             inner = self.add_attribute(topic_name, DictTopic, init_value, is_stateful)
-            new_attr = ObjDictTopic(inner, self._server.get_object)
+            new_attr = ObjDictTopic(inner, map_id_to_object)
         elif origin_type == ObjListTopic:
             if init_value is not None:
                 assert isinstance(init_value, list)
                 if len(init_value)>0 and isinstance(init_value[0], SObject):
                     init_value = [value.get_id() for value in init_value]
             inner = self.add_attribute(topic_name, ListTopic, init_value, is_stateful)
-            new_attr = ObjListTopic(inner, self._server.get_object)
+            new_attr = ObjListTopic(inner, map_id_to_object)
         elif origin_type == ObjSetTopic:
             if init_value is not None:
                 assert isinstance(init_value, list)
                 if len(init_value)>0 and isinstance(init_value[0], SObject):
                     init_value = [value.get_id() for value in init_value]
             inner = self.add_attribute(topic_name, SetTopic, init_value, is_stateful)
-            new_attr = ObjSetTopic(inner, self._server.get_object)
+            new_attr = ObjSetTopic(inner, map_id_to_object)
         else:
             new_attr = self._server.create_topic(f"a/{self._id}/{topic_name}", topic_type, init_value, is_stateful) # type: ignore
         self._attributes[topic_name] = new_attr

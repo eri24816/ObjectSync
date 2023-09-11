@@ -35,9 +35,9 @@ class WrappedTopic:
 
 T = TypeVar('T', bound='SObject')
 class ObjTopic(Generic[T],WrappedTopic):
-    def __init__(self, topic: StringTopic,map: Callable[[str],T]):
+    def __init__(self, topic: StringTopic,map: Callable[[str],T|None]):
         self._topic = topic
-        self._map : Callable[[str],T]|None = map
+        self._map : Callable[[str],T|None] = map
         self.on_set = Action()
         self.on_set2 = Action()
 
@@ -60,9 +60,9 @@ class ObjTopic(Generic[T],WrappedTopic):
 
 T = TypeVar('T', bound='SObject')
 class ObjListTopic(Generic[T],WrappedTopic):
-    def __init__(self, topic: ListTopic,map: Callable[[str],T]):
+    def __init__(self, topic: ListTopic,map: Callable[[str],T|None]):
         self._topic:ListTopic = topic
-        self._map : Callable[[str],T]|None = map
+        self._map : Callable[[str],T|None] = map
         self.on_set = Action()
         self.on_set2 = Action()
         self.on_insert = Action()
@@ -110,9 +110,9 @@ class ObjListTopic(Generic[T],WrappedTopic):
 
 T = TypeVar('T', bound='SObject')
 class ObjSetTopic(Generic[T],WrappedTopic):
-    def __init__(self, topic: SetTopic,map: Callable[[str],T]):
+    def __init__(self, topic: SetTopic,map: Callable[[str],T|None]):
         self._topic:SetTopic = topic
-        self._map : Callable[[str],T]|None = map
+        self._map : Callable[[str],T|None] = map
         self.on_set = Action()
         self.on_set2 = Action()
         self.on_append = Action()
@@ -150,9 +150,9 @@ class ObjSetTopic(Generic[T],WrappedTopic):
 
 T = TypeVar('T', bound='SObject')    
 class ObjDictTopic(Generic[T],WrappedTopic):
-    def __init__(self, topic: DictTopic,map: Callable[[str],T]):
+    def __init__(self, topic: DictTopic,map: Callable[[str],T|None]):
         self._topic:DictTopic = topic
-        self._map : Callable[[str],T]|None = map
+        self._map : Callable[[str],T|None] = map
 
         self.on_set = Action()
         self.on_set2 = Action()
@@ -186,8 +186,10 @@ class ObjDictTopic(Generic[T],WrappedTopic):
     def pop(self, key):
         return self._map(self._topic.pop(key))
 
-    def __getitem__(self, key):
-        return self._map(self._topic.__getitem__(key))
+    def __getitem__(self, key)->T:
+        res = self._map(self._topic.__getitem__(key))
+        assert res is not None
+        return res
     
     def __setitem__(self, key, value):
         return self._topic.__setitem__(key, value.get_id())

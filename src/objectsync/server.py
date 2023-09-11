@@ -181,6 +181,9 @@ class Server:
     def get_objects(self) -> List[SObject]:
         return list(self._objects.values())
     
+    def has_object(self, id:str) -> bool:
+        return id in self._objects
+    
     def create_object_s(self, type:str, parent_id:str, id:str|None = None, serialized:SObjectSerialized|None=None,**build_kwargs) -> SObject:
         if id is None:
             id = gen_id()
