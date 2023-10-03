@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class SObjectSerialized:
     id:str
     type:str
-    attributes:List[List]
+    attributes:List[List] # name, type, value, is_stateful
     children:Dict[str,SObjectSerialized]
     user_attribute_references:Dict[str,str]
     user_sobject_references:Dict[str,str]
@@ -53,7 +53,7 @@ class SObject:
         self._attributes : Dict[str,Topic|WrappedTopic] = {}
         self._children : List[SObject] = []
         self.history : History = History()
-
+        self._destroyed = False
 
     def initialize(self, serialized:SObjectSerialized|None=None,build_kwargs:Dict[str,Any]={},call_init:bool=True):
         self.is_new = serialized is None
@@ -239,6 +239,11 @@ class SObject:
         '''
         Caution: Do not call this method directly. Use remove() instead.
         '''
+        if self._destroyed:
+            raise ValueError(f"Object {self._id} already destroyed")
+            
+        self._destroyed = True
+
         self._server.remove_topic(self._parent_id.get_name())
         self._server.remove_topic(self._tags.get_name())
 
@@ -265,6 +270,9 @@ class SObject:
             user_attribute_references=self._user_attribute_references,
             user_sobject_references=self._user_sobject_references
         )
+
+    def is_destroyed(self):
+        return self._destroyed
     
     def serialize(self) -> SObjectSerialized:
 
