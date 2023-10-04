@@ -3,9 +3,9 @@ import logging
 from objectsync.utils import NameSpace
 logger = logging.getLogger(__name__)
 from typing import Dict, List, TypeVar, Any, Callable
-from chatroom import ChatroomServer, Transition
-from chatroom.topic import Topic, IntTopic, SetTopic, DictTopic
-from chatroom.change import EventChangeTypes, StringChangeTypes
+from topicsync import TopicsyncServer, Transition
+from topicsync.topic import Topic, IntTopic, SetTopic, DictTopic
+from topicsync.change import EventChangeTypes, StringChangeTypes
 
 from objectsync.hierarchy_utils import get_ancestors, lowest_common_ancestor
 from objectsync.count import gen_id, get_id_count, set_id_count
@@ -15,7 +15,7 @@ class Server:
     def __init__(self, port: int, host:str='localhost', root_object_type:type[SObject]=SObject) -> None:
         self._port = port
         self._host = host
-        self._chatroom = ChatroomServer(port,host,transition_callback=self._transition_callback)
+        self._topicsync = TopicsyncServer(port,host,transition_callback=self._transition_callback)
         self._objects : Dict[str,SObject] = {}
         root_id = 'root'
         self._root_object = root_object_type(self,root_id,'')
@@ -24,22 +24,22 @@ class Server:
         self._object_types : Dict[str,type[SObject]] = {}
         self._object_types_to_names : Dict[type[SObject],str] = {SObject:'SObject'}
 
-        # Link callbacks to chatroom events
+        # Link callbacks to topicsync events
         # so these methods can be called from both client and server
-        self._chatroom.on('create_object', self._create_object, self._destroy_object)
-        self._chatroom.on('destroy_object', self._destroy_object, self._create_object)
+        self._topicsync.on('create_object', self._create_object, self._destroy_object)
+        self._topicsync.on('destroy_object', self._destroy_object, self._create_object)
 
-        self._chatroom.register_service('undo', self._undo)
-        self._chatroom.register_service('redo', self._redo)
+        self._topicsync.register_service('undo', self._undo)
+        self._topicsync.register_service('redo', self._redo)
 
-        self.register_service = self._chatroom.register_service
+        self.register_service = self._topicsync.register_service
 
-        self.record = self._chatroom.record
+        self.record = self._topicsync.record
         '''Use this context manager to package multiple changes into a single transition to create resonable undo/redo behavior'''
-        self.set_client_id_count = self._chatroom.set_client_id_count
-        self.get_client_id_count = self._chatroom.get_client_id_count
+        self.set_client_id_count = self._topicsync.set_client_id_count
+        self.get_client_id_count = self._topicsync.get_client_id_count
 
-        self.do_after_transition = self._chatroom.do_after_transition
+        self.do_after_transition = self._topicsync.do_after_transition
 
         self.globals = NameSpace()
         
@@ -47,7 +47,7 @@ class Server:
         '''
         Entry point for the server
         '''
-        await self._chatroom.serve()
+        await self._topicsync.serve()
 
     '''
     Callbacks
@@ -129,7 +129,7 @@ class Server:
         transition = self._objects[target].history.undo()
 
         if transition is not None:
-            self._chatroom.undo(transition)
+            self._topicsync.undo(transition)
         else:
             logger.debug('no transition to undo')
 
@@ -138,7 +138,7 @@ class Server:
             target = 'root'
         transition = self._objects[target].history.redo()
         if transition is not None:
-            self._chatroom.redo(transition)
+            self._topicsync.redo(transition)
         else:
             logger.debug('no transition to redo')
 
@@ -187,7 +187,7 @@ class Server:
     def create_object_s(self, type:str, parent_id:str, id:str|None = None, serialized:SObjectSerialized|None=None,**build_kwargs) -> SObject:
         if id is None:
             id = gen_id()
-        self._chatroom.emit('create_object', type = type, parent_id = parent_id, id = id, serialized = serialized, build_kwargs=build_kwargs)
+        self._topicsync.emit('create_object', type = type, parent_id = parent_id, id = id, serialized = serialized, build_kwargs=build_kwargs)
         return self.get_object(id)
     
     T=TypeVar('T', bound=SObject)
@@ -197,7 +197,7 @@ class Server:
         return new_object
     
     def destroy_object(self, id:str):
-        self._chatroom.emit('destroy_object', id = id)
+        self._topicsync.emit('destroy_object', id = id)
 
     def set_id_count(self, count:int):
         set_id_count(count)
@@ -215,23 +215,23 @@ class Server:
         return self._objects['root']
 
     '''
-    Encapsulate the chatroom server
+    Encapsulate the topicsync server
     '''
 
     T = TypeVar('T', bound=Topic)
     def create_topic(self, topic_name, topic_type: type[T],init_value=None,is_stateful=True) -> T:
-        topic = self._chatroom.add_topic(topic_name,topic_type,init_value,is_stateful=is_stateful)
+        topic = self._topicsync.add_topic(topic_name,topic_type,init_value,is_stateful=is_stateful)
         return topic
 
     T = TypeVar('T', bound=Topic)
     def get_topic(self, topic_name, type: type[T]=Topic) -> T:
-        return self._chatroom.topic(topic_name,type)
+        return self._topicsync.topic(topic_name,type)
     
     def remove_topic(self, topic_name):
-        self._chatroom.remove_topic(topic_name)
+        self._topicsync.remove_topic(topic_name)
 
     def on(self, event_name: str, callback: Callable, inverse_callback: Callable|None = None, is_stateful: bool = True,auto=False, *args, **kwargs: None):
-        self._chatroom.on(event_name, callback, inverse_callback, is_stateful,auto=auto)
+        self._topicsync.on(event_name, callback, inverse_callback, is_stateful,auto=auto)
 
     def emit(self, event_name, **kwargs):
-        self._chatroom.emit(event_name, **kwargs)
+        self._topicsync.emit(event_name, **kwargs)

@@ -1,7 +1,7 @@
 from typing import Dict, List
 import logging
 logger = logging.getLogger(__name__)
-from chatroom import Transition
+from topicsync import Transition
 
 class HistoryItem:
     def __init__(self, transition: Transition, done: bool = False):

@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, List
-from chatroom.change import Change
-from chatroom.utils import Action
-from chatroom.topic import ListTopic, DictTopic, SetTopic, Topic, StringTopic
+from topicsync.change import Change
+from topicsync.utils import Action
+from topicsync.topic import ListTopic, DictTopic, SetTopic, Topic, StringTopic
 from typing import TypeVar, Generic
 
 from objectsync.utils import camel_to_snake

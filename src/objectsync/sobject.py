@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from mimetypes import init
 from typing import List, Dict, Any, Optional, Self, TypeVar, Union, TYPE_CHECKING, Callable
 import typing
-from chatroom.topic import SetTopic, Topic, IntTopic, StringTopic, DictTopic, ListTopic, EventTopic, FloatTopic, GenericTopic
+from topicsync.topic import SetTopic, Topic, IntTopic, StringTopic, DictTopic, ListTopic, EventTopic, FloatTopic, GenericTopic
 from objectsync.topic import ObjDictTopic, ObjListTopic, ObjSetTopic, ObjTopic, WrappedTopic
 
 from objectsync.history import History, HistoryItem

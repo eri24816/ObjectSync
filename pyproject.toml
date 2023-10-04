@@ -1,12 +1,28 @@
+[project]
+
+authors = [
+    { name = "eri24816", email = "a931eric@gmail.com" },
+    { name = "peterxcli", email = "peterxcli@gmail.com" },
+]
+
+maintainers = [
+    "eri24816 <a931eric@gmail.com>",
+]
+
+
 [tool.poetry]
 name = "objectsync"
-version = "0.4.0"
+version = "0.5.0"
 description = ""
 authors = ["peterxcli <peterxcli@gmail.com>","eri24816 <a931eric@gmail.com>"]
 
+maintainers = [
+    "eri24816 <a931eric@gmail.com>",
+]
+
 [tool.poetry.dependencies]
 python = "^3.11"
-chatRoom = { git = "https://github.com/eri24816/ChatRoom.git", branch = "main" }
+topicsync = "^0.7.0"
 
 
 [build-system]
