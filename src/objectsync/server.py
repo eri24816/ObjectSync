@@ -40,6 +40,8 @@ class Server:
         self.get_client_id_count = self._topicsync.get_client_id_count
 
         self.do_after_transition = self._topicsync.do_after_transition
+        self.on_client_connect = self._topicsync.on_client_connect
+        self.get_context = self._topicsync.get_context
 
         self.globals = NameSpace()
         
