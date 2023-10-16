@@ -103,14 +103,9 @@ class SObject:
 
         # sort by child id so the creation order is the same as that specified in build()
         
-        def sort_key(x_:tuple[str,Any]):
-            x = x_[0]
-            if x.startswith('0_'):
-                return int(x[2:])
-            return 0
-        children = sorted(serialized.children.items(), key=sort_key)
-        for child_id, child_serialized in children:
-            self._server._create_object(child_serialized.type, self._id, child_id, child_serialized)
+        children = sorted(serialized.children.values(), key=self._server.deserialize_sort_key)
+        for child_serialized in children:
+            self._server._create_object(child_serialized.type, self._id, child_serialized.id, child_serialized)
 
         # restore sobject references added during build()
         for ref_name, sobject_id in serialized.user_sobject_references.items():

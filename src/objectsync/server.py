@@ -12,7 +12,8 @@ from objectsync.count import gen_id, get_id_count, set_id_count
 from objectsync.sobject import SObject, SObjectSerialized
 
 class Server:
-    def __init__(self, port: int, host:str='localhost', root_object_type:type[SObject]=SObject) -> None:
+    def __init__(self, port: int, host:str='localhost', root_object_type:type[SObject]=SObject, 
+                 deserialize_sort_key:Callable[[SObjectSerialized],int]=lambda x:0) -> None:
         self._port = port
         self._host = host
         self._topicsync = TopicsyncServer(port,host,transition_callback=self._transition_callback)
@@ -38,6 +39,7 @@ class Server:
         '''Use this context manager to package multiple changes into a single transition to create resonable undo/redo behavior'''
         self.set_client_id_count = self._topicsync.set_client_id_count
         self.get_client_id_count = self._topicsync.get_client_id_count
+        self.deserialize_sort_key = deserialize_sort_key
 
         self.do_after_transition = self._topicsync.do_after_transition
         self.on_client_connect = self._topicsync.on_client_connect
