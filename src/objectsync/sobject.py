@@ -163,6 +163,12 @@ class SObject:
         assert isinstance(new_child, type)
         return new_child
     
+    def add_child_s(self,type:str,**build_kwargs) -> SObject:
+        id = gen_id()
+        self._server.create_object_s(type, self._id, id=id, **build_kwargs)
+        new_child = self._server.get_object(id)
+        return new_child
+    
     def remove_child(self, child:SObject): # Maybe deprecate this
         self._server.destroy_object(child.get_id())
     
