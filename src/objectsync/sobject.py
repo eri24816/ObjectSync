@@ -220,6 +220,12 @@ class SObject:
         self._attributes[topic_name] = new_attr
         return new_attr # type: ignore
     
+    def remove_attribute(self, topic_name):
+        if topic_name not in self._attributes:
+            raise ValueError(f"Attribute '{topic_name}' does not exist")
+        self._server.remove_topic(self._attributes[topic_name].get_name())
+        del self._attributes[topic_name]
+    
     def get_attribute(self, topic_name) -> Topic|WrappedTopic:
         if topic_name not in self._attributes:
             raise ValueError(f"Attribute '{topic_name}' does not exist")
