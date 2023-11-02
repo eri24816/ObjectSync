@@ -24,6 +24,9 @@ class WrappedTopic:
     def is_stateful(self):
         return self._topic.is_stateful()
     
+    def is_order_strict(self):    
+        return self._topic.is_order_strict()
+    
     def get_raw(self):
         return self._topic.get()
     

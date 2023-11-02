@@ -83,16 +83,22 @@ class SObject:
         '''
 
     def _deserialize(self, serialized:SObjectSerialized):
-
+        
         # restore attributes
-        for name, type_name, value, is_stateful in serialized.attributes:
+        for attr_info in serialized.attributes:
+            if len(attr_info)==4: # DEPRECATED old format.
+                name, type_name, value, is_stateful = attr_info
+                order_strict = True
+            else:
+                name, type_name, value, is_stateful, order_strict = attr_info
+
             # the type_name is a string, so we need to convert it to a type object
             full_type_name = snake_to_camel(type_name)+'Topic'
             full_type_name = full_type_name[0].upper() + full_type_name[1:]
             # grab the type from the air. Hacker.
             type = globals()[full_type_name]
             
-            self.add_attribute(name, type, value, is_stateful)
+            self.add_attribute(name, type, value, is_stateful, order_strict = order_strict)
 
         # restore attribute references used in user code
         for ref_name, attr_name in serialized.user_attribute_references.items():
@@ -178,7 +184,7 @@ class SObject:
         return self._server.get_object(self._parent_id.get())
     
     T1 = TypeVar("T1", bound=Topic|WrappedTopic)
-    def add_attribute(self, topic_name, topic_type: type[T1], init_value=None, is_stateful=True) -> T1: 
+    def add_attribute(self, topic_name, topic_type: type[T1], init_value=None, is_stateful=True,order_strict=True) -> T1: 
         origin_type = typing.get_origin(topic_type)
         if origin_type is None:
             origin_type = topic_type
@@ -192,31 +198,31 @@ class SObject:
         if origin_type == ObjTopic:
             if init_value is not None and isinstance(init_value, SObject):
                 init_value = init_value.get_id()
-            inner = self.add_attribute(topic_name, StringTopic, init_value, is_stateful)
+            inner = self.add_attribute(topic_name, StringTopic, init_value, is_stateful,order_strict=order_strict)
             new_attr = ObjTopic(inner, map_id_to_object)
         elif origin_type == ObjDictTopic:
             if init_value is not None:
                 assert isinstance(init_value, Dict)
                 if len(init_value)>0 and isinstance(list(init_value.values())[0], SObject):
                     init_value = {key: value.get_id() for key, value in init_value.items()}
-            inner = self.add_attribute(topic_name, DictTopic, init_value, is_stateful)
+            inner = self.add_attribute(topic_name, DictTopic, init_value, is_stateful,order_strict=order_strict)
             new_attr = ObjDictTopic(inner, map_id_to_object)
         elif origin_type == ObjListTopic:
             if init_value is not None:
                 assert isinstance(init_value, list)
                 if len(init_value)>0 and isinstance(init_value[0], SObject):
                     init_value = [value.get_id() for value in init_value]
-            inner = self.add_attribute(topic_name, ListTopic, init_value, is_stateful)
+            inner = self.add_attribute(topic_name, ListTopic, init_value, is_stateful,order_strict=order_strict)
             new_attr = ObjListTopic(inner, map_id_to_object)
         elif origin_type == ObjSetTopic:
             if init_value is not None:
                 assert isinstance(init_value, list)
                 if len(init_value)>0 and isinstance(init_value[0], SObject):
                     init_value = [value.get_id() for value in init_value]
-            inner = self.add_attribute(topic_name, SetTopic, init_value, is_stateful)
+            inner = self.add_attribute(topic_name, SetTopic, init_value, is_stateful,order_strict=order_strict)
             new_attr = ObjSetTopic(inner, map_id_to_object)
         else:
-            new_attr = self._server.create_topic(f"a/{self._id}/{topic_name}", topic_type, init_value, is_stateful) # type: ignore
+            new_attr = self._server.create_topic(f"a/{self._id}/{topic_name}", topic_type, init_value, is_stateful,order_strict=order_strict) # type: ignore
         self._attributes[topic_name] = new_attr
         return new_attr # type: ignore
     
@@ -268,7 +274,7 @@ class SObject:
                 value = attr.get_raw()
             else:
                 value = attr.get()
-            attributes_serialized.append([name,attr.get_type_name(),value,attr.is_stateful()])
+            attributes_serialized.append([name,attr.get_type_name(),value,attr.is_stateful(),attr.is_order_strict()])
             self._server.remove_topic(attr.get_name())
 
         children_serialized = {}

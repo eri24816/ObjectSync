@@ -223,8 +223,8 @@ class Server:
     '''
 
     T = TypeVar('T', bound=Topic)
-    def create_topic(self, topic_name, topic_type: type[T],init_value=None,is_stateful=True) -> T:
-        topic = self._topicsync.add_topic(topic_name,topic_type,init_value,is_stateful=is_stateful)
+    def create_topic(self, topic_name, topic_type: type[T],init_value=None,is_stateful=True,order_strict=True) -> T:
+        topic = self._topicsync.add_topic(topic_name,topic_type,init_value,is_stateful=is_stateful,order_strict=order_strict)
         return topic
 
     T = TypeVar('T', bound=Topic)
