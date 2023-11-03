@@ -1,3 +1,10 @@
+## v0.6.0 (2023-11-03)
+
+### Feat
+
+- add order_strict to topic
+- add remove_attribute
+
 ## v0.5.1 (2023-10-25)
 
 ### Fix
