@@ -184,7 +184,9 @@ class SObject:
         return self._server.get_object(self._parent_id.get())
     
     T1 = TypeVar("T1", bound=Topic|WrappedTopic)
-    def add_attribute(self, topic_name, topic_type: type[T1], init_value=None, is_stateful=True,order_strict=True) -> T1: 
+    def add_attribute(self, topic_name, topic_type: type[T1], init_value=None, is_stateful=True,order_strict=None) -> T1: 
+        if order_strict is None:
+            order_strict = is_stateful
         origin_type = typing.get_origin(topic_type)
         if origin_type is None:
             origin_type = topic_type
