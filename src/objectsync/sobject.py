@@ -88,7 +88,7 @@ class SObject:
         for attr_info in serialized.attributes:
             if len(attr_info)==4: # DEPRECATED old format.
                 name, type_name, value, is_stateful = attr_info
-                order_strict = True
+                order_strict = is_stateful
             else:
                 name, type_name, value, is_stateful, order_strict = attr_info
 
@@ -303,7 +303,7 @@ class SObject:
                 value = attr.get_raw()
             else:
                 value = attr.get()
-            attributes_serialized.append([name,attr.get_type_name(),value,attr.is_stateful()])
+            attributes_serialized.append([name,attr.get_type_name(),value,attr.is_stateful(),attr.is_order_strict()])
 
         children_serialized = {child.get_id(): child.serialize() for child in self._children}
         return SObjectSerialized(
