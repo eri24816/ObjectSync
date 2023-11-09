@@ -3,7 +3,7 @@ import logging
 
 from objectsync.utils import snake_to_camel
 logger = logging.getLogger(__name__)
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from mimetypes import init
 from typing import List, Dict, Any, Optional, Self, TypeVar, Union, TYPE_CHECKING, Callable
 import typing
@@ -20,10 +20,11 @@ if TYPE_CHECKING:
 class SObjectSerialized:
     id:str
     type:str
-    attributes:List[List] # name, type, value, is_stateful
+    attributes:List[List] # name, type, value, is_stateful, order_strict
     children:Dict[str,SObjectSerialized]
     user_attribute_references:Dict[str,str]
     user_sobject_references:Dict[str,str]
+    wrapped_topics:List[str] = field(default_factory=list) # DEPRECATED: the default value is for old format
     
     def to_dict(self):
         return {
@@ -33,7 +34,50 @@ class SObjectSerialized:
             'children':{child_id:child.to_dict() for child_id,child in self.children.items()},
             'user_attribute_references':self.user_attribute_references,
             'user_sobject_references':self.user_sobject_references,
+            'wrapped_topics':self.wrapped_topics
         }
+    
+    def get_child(self, name:str)->SObjectSerialized:
+        '''
+        input: name of the child
+        output: the child object
+        '''
+        return self.children[self.user_sobject_references[name]]
+    
+    def has_child(self, name:str)->bool:
+        return name in self.user_sobject_references and self.user_sobject_references[name] in self.children
+    
+    def get_attribute(self, name:str)->Any:
+        for attr in self.attributes:
+            if attr[0] == name:
+                return attr[2]
+    
+    def update_references(self, id_map:Dict[str,str]):
+        '''
+        input: a dictionary mapping old ids to new ids
+        output: None
+        '''
+        for attr in self.attributes:
+            name, value = attr[0], attr[2]
+            if name in self.wrapped_topics:
+                if isinstance(value, str) and value in id_map:
+                    attr[2] = id_map[value]
+                elif isinstance(value, list):
+                    attr[2] = [id_map[id] if id in id_map else id for id in value]
+                elif isinstance(value, dict):
+                    attr[2] = {key: id_map[id] if id in id_map else id for key, id in value.items()}
+        for child in self.children.values():
+            child.update_references(id_map)
+
+    def update_type_names(self, type_map:Dict[str,str]):
+        '''
+        input: a dictionary mapping old type names to new type names
+        output: None
+        '''
+        if self.type in type_map:
+            self.type = type_map[self.type]
+        for child in self.children.values():
+            child.update_type_names(type_map)
 
     def __dict__(self):
         return self.to_dict()
@@ -169,8 +213,9 @@ class SObject:
         assert isinstance(new_child, type)
         return new_child
     
-    def add_child_s(self,type:str,**build_kwargs) -> SObject:
-        id = gen_id()
+    def add_child_s(self,type:str,id:str|None=None,**build_kwargs) -> SObject:
+        if id is None:
+            id = gen_id()
         self._server.create_object_s(type, self._id, id=id, **build_kwargs)
         new_child = self._server.get_object(id)
         return new_child
@@ -285,13 +330,19 @@ class SObject:
             child_info = self._server._destroy_object(child.get_id())
             children_serialized[child.get_id()] = child_info['serialized']
 
+        wrapped_topics = []
+        for attribute in self._attributes.values():
+            if isinstance(attribute, WrappedTopic):
+                wrapped_topics.append(attribute.get_name().split('/')[-1])
+
         return SObjectSerialized(
             id = self._id,
             type = self._server.get_object_type_name(self.__class__),
             attributes = attributes_serialized,
             children = children_serialized,
             user_attribute_references=self._user_attribute_references,
-            user_sobject_references=self._user_sobject_references
+            user_sobject_references=self._user_sobject_references,
+            wrapped_topics=wrapped_topics
         )
 
     def is_destroyed(self):
@@ -308,13 +359,20 @@ class SObject:
             attributes_serialized.append([name,attr.get_type_name(),value,attr.is_stateful(),attr.is_order_strict()])
 
         children_serialized = {child.get_id(): child.serialize() for child in self._children}
+
+        wrapped_topics = []
+        for attribute in self._attributes.values():
+            if isinstance(attribute, WrappedTopic):
+                wrapped_topics.append(attribute.get_name().split('/')[-1])
+
         return SObjectSerialized(
             id = self._id,
             type = self._server.get_object_type_name(self.__class__),
             attributes = attributes_serialized,
             children = children_serialized,
             user_attribute_references=self._user_attribute_references,
-            user_sobject_references=self._user_sobject_references
+            user_sobject_references=self._user_sobject_references,
+            wrapped_topics=wrapped_topics
         )
 
     def add_tag(self, tag):
