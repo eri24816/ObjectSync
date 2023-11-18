@@ -1,3 +1,9 @@
+## v0.7.1 (2023-11-18)
+
+### Fix
+
+- use newer topicsync version
+
 ## v0.7.0 (2023-11-18)
 
 ### Feat
