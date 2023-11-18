@@ -1,3 +1,14 @@
+## v0.7.0 (2023-11-18)
+
+### Feat
+
+- update format for SObjectSerialized
+
+### Fix
+
+- fix bugs
+- fix order_strict bug
+
 ## v0.6.1 (2023-11-03)
 
 ### Fix
