@@ -12,7 +12,7 @@ maintainers = [
 
 [tool.poetry]
 name = "objectsync"
-version = "0.7.1"
+version = "0.8.0"
 description = ""
 authors = ["peterxcli <peterxcli@gmail.com>","eri24816 <a931eric@gmail.com>"]
 
@@ -22,7 +22,7 @@ maintainers = [
 
 [tool.poetry.dependencies]
 python = "^3.11"
-topicsync = "^0.9.0"
+topicsync = "^0.10.0"
 
 
 
