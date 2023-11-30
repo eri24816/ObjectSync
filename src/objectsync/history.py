@@ -9,15 +9,24 @@ class HistoryItem:
         self.done = done
 
 class History:
-    def __init__(self) -> None:
+    def __init__(self,max_len=1000) -> None:
         self.chain:List[HistoryItem] = []
         self._current_index = -1
+        self.max_len = max_len
 
     def add(self, transition: Transition):
         # Prune unreachable chain
         self.chain = self.chain[:self._current_index+1]
         self.chain.append(HistoryItem(transition,done=True))
         self._current_index += 1
+        if len(self.chain) > self.max_len:
+            self.chain = self.chain[1:]
+            self._current_index -= 1
+
+    def clear(self):
+        # This is used when some change is made that invalidates the history, in other words, some not undoable change.
+        self.chain = []
+        self._current_index = -1
 
     def undo(self) -> Transition|None:
         if self._current_index >= 0:

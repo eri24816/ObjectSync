@@ -4,7 +4,6 @@ import logging
 from objectsync.utils import snake_to_camel
 logger = logging.getLogger(__name__)
 from dataclasses import dataclass, field
-from mimetypes import init
 from typing import List, Dict, Any, Optional, Self, TypeVar, Union, TYPE_CHECKING, Callable
 import typing
 from topicsync.topic import SetTopic, Topic, IntTopic, StringTopic, DictTopic, ListTopic, EventTopic, FloatTopic, GenericTopic

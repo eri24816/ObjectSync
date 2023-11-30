@@ -1,6 +1,7 @@
 import logging
 
 from objectsync.utils import NameSpace
+import topicsync
 logger = logging.getLogger(__name__)
 from typing import Dict, List, TypeVar, Any, Callable
 from topicsync import TopicsyncServer, Transition
@@ -16,6 +17,7 @@ class Server:
                  deserialize_sort_key:Callable[[SObjectSerialized],int]=lambda x:0) -> None:
         self._port = port
         self._host = host
+        self._to_clear_history = False
         self._topicsync = TopicsyncServer(port,host,transition_callback=self._transition_callback)
         self._objects : Dict[str,SObject] = {}
         root_id = 'root'
@@ -90,6 +92,15 @@ class Server:
         del self._objects[id]
         return {'type':self._object_types_to_names[obj.__class__],'parent_id':obj.get_parent().get_id(),'serialized':serialized}
     
+    def clear_history_inclusive(self):
+        '''
+        Disallow undoing past (if in a transition, include this transition.)
+        '''
+        if self._topicsync.phase() != topicsync.Phase.FORWARDING:
+            self.clear_history()
+        else:
+            self._to_clear_history = True
+
     def _transition_callback(self, transition:Transition):
         # Find the lowest object to record the transition in
 
@@ -98,6 +109,11 @@ class Server:
             debug_msg += '\n' + str(change.serialize())
         debug_msg += '\n'
         logger.debug(debug_msg)
+
+        if self._to_clear_history:
+            self.clear_history()
+            self._to_clear_history = False
+            return
         
         affected_objs = []
         for change in transition.changes:
@@ -217,6 +233,11 @@ class Server:
     
     def get_root_object(self) -> SObject:
         return self._objects['root']
+    
+    def clear_history(self):
+        # This is used when some change is made that invalidates the history, in other words, some not undoable change.
+        for obj in self.get_objects(): 
+            obj.history.clear() 
 
     '''
     Encapsulate the topicsync server
