@@ -1,3 +1,9 @@
+## v0.8.1 (2023-12-10)
+
+### Fix
+
+- update topicsync dep version
+
 ## v0.8.0 (2023-12-01)
 
 ### Feat
