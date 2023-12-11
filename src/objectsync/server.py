@@ -45,7 +45,8 @@ class Server:
 
         self.do_after_transition = self._topicsync.do_after_transition
         self.on_client_connect = self._topicsync.on_client_connect
-        self.get_context = self._topicsync.get_context
+        self.on_client_disconnect = self._topicsync.on_client_disconnect
+        self.get_action_source = self._topicsync.get_action_source
 
         self.globals = NameSpace()
         
