@@ -1,3 +1,9 @@
+## v0.9.0 (2024-02-03)
+
+### Feat
+
+- allow specifying id when adding child
+
 ## v0.8.3 (2023-12-12)
 
 ### Fix
