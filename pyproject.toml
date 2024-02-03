@@ -12,7 +12,7 @@ maintainers = [
 
 [tool.poetry]
 name = "objectsync"
-version = "0.9.0"
+version = "0.9.1"
 description = ""
 authors = ["peterxcli <peterxcli@gmail.com>","eri24816 <a931eric@gmail.com>"]
 
