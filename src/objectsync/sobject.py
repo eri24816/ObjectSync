@@ -205,8 +205,9 @@ class SObject:
         return self._id == 'root'
 
     T = TypeVar("T", bound='SObject')
-    def add_child(self, type: type[T], **build_kwargs) -> T:
-        id = gen_id()
+    def add_child(self, type: type[T], id=None, **build_kwargs) -> T:
+        if id is None:
+            id = gen_id()
         self._server.create_object(type, self._id, id=id, **build_kwargs)
         new_child = self._server.get_object(id)
         assert isinstance(new_child, type)

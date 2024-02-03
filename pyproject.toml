@@ -22,7 +22,7 @@ maintainers = [
 
 [tool.poetry.dependencies]
 python = "^3.11"
-topicsync = ">=0.11.3"
+topicsync = ">=0.12.0"
 
 
 
