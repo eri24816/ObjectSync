@@ -98,7 +98,9 @@ class SObject:
         self.history : History = History()
         self._destroyed = False
 
-    def initialize(self, serialized:SObjectSerialized|None=None,build_kwargs:Dict[str,Any]={},call_init:bool=True):
+    def initialize(self, serialized:SObjectSerialized|None=None,build_kwargs:Dict[str,Any]=None,call_init:bool=True):
+        if build_kwargs is None:
+            build_kwargs = {}
         self.is_new = serialized is None
         if serialized is None:
             self.build(**build_kwargs)
