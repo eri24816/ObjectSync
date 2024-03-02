@@ -247,28 +247,28 @@ class SObject:
         if origin_type == ObjTopic:
             if init_value is not None and isinstance(init_value, SObject):
                 init_value = init_value.get_id()
-            inner = self.add_attribute(topic_name, StringTopic, init_value, is_stateful,order_strict=order_strict)
+            inner = self._server.create_topic(f"a/{self._id}/{topic_name}", StringTopic, init_value, is_stateful,order_strict=order_strict) # type: ignore
             new_attr = ObjTopic(inner, map_id_to_object)
         elif origin_type == ObjDictTopic:
             if init_value is not None:
                 assert isinstance(init_value, Dict)
                 if len(init_value)>0 and isinstance(list(init_value.values())[0], SObject):
                     init_value = {key: value.get_id() for key, value in init_value.items()}
-            inner = self.add_attribute(topic_name, DictTopic, init_value, is_stateful,order_strict=order_strict)
+            inner = self._server.create_topic(f"a/{self._id}/{topic_name}", DictTopic, init_value, is_stateful,order_strict=order_strict) # type: ignore
             new_attr = ObjDictTopic(inner, map_id_to_object)
         elif origin_type == ObjListTopic:
             if init_value is not None:
                 assert isinstance(init_value, list)
                 if len(init_value)>0 and isinstance(init_value[0], SObject):
                     init_value = [value.get_id() for value in init_value]
-            inner = self.add_attribute(topic_name, ListTopic, init_value, is_stateful,order_strict=order_strict)
+            inner = self._server.create_topic(f"a/{self._id}/{topic_name}", ListTopic, init_value, is_stateful,order_strict=order_strict) # type: ignore
             new_attr = ObjListTopic(inner, map_id_to_object)
         elif origin_type == ObjSetTopic:
             if init_value is not None:
                 assert isinstance(init_value, list)
                 if len(init_value)>0 and isinstance(init_value[0], SObject):
                     init_value = [value.get_id() for value in init_value]
-            inner = self.add_attribute(topic_name, SetTopic, init_value, is_stateful,order_strict=order_strict)
+            inner = self._server.create_topic(f"a/{self._id}/{topic_name}", SetTopic, init_value, is_stateful,order_strict=order_strict) # type: ignore
             new_attr = ObjSetTopic(inner, map_id_to_object)
         else:
             new_attr = self._server.create_topic(f"a/{self._id}/{topic_name}", topic_type, init_value, is_stateful,order_strict=order_strict) # type: ignore
