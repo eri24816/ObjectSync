@@ -19,12 +19,33 @@ if TYPE_CHECKING:
 class SObjectSerialized:
     id:str
     type:str
-    attributes:List[List] # name, type, value, is_stateful, order_strict
+    attributes:List[Any] # list of serialized attributes (topics)
     children:Dict[str,SObjectSerialized]
     user_attribute_references:Dict[str,str]
     user_sobject_references:Dict[str,str]
     wrapped_topics:List[str] = field(default_factory=list) # DEPRECATED: the default value is for old format
-    
+    def __init__(self, id: str, type: str, attributes: List[List], children: Dict[str, SObjectSerialized], user_attribute_references: Dict[str, str], user_sobject_references: Dict[str, str], wrapped_topics: List[str] = None):
+        self.id = id
+        self.type = type
+        self.attributes = attributes
+        self.attributes_info = list(map(self._to_info_format, attributes))
+        self.children = children
+        self.user_attribute_references = user_attribute_references
+        self.user_sobject_references = user_sobject_references
+        self.wrapped_topics = wrapped_topics if wrapped_topics is not None else []
+
+    def _to_info_format(self, attributes: List) -> List:
+        if len(attributes) == 3:
+            name, type_name, serialized = attributes
+            info = Topic.get_info(serialized)
+            return [name, type_name, info['value'], info['stateful'], info['order_strict']]
+        elif len(attributes) == 4:
+            name, type_name, value, is_stateful = attributes
+            # order_strict is the same as is_stateful in 4 element format
+            return [name, type_name, value, is_stateful, is_stateful]
+        else:
+            return attributes
+
     def to_dict(self):
         return {
             'id':self.id,
@@ -128,22 +149,27 @@ class SObject:
         '''
 
     def _deserialize(self, serialized:SObjectSerialized):
-        
         # restore attributes
         for attr_info in serialized.attributes:
+            serialized_topic = None
             if len(attr_info)==4: # DEPRECATED old format.
                 name, type_name, value, is_stateful = attr_info
                 order_strict = is_stateful
-            else:
+            elif len(attr_info) == 5:
                 name, type_name, value, is_stateful, order_strict = attr_info
+            else:
+                name, type_name, serialized_topic = attr_info
 
             # the type_name is a string, so we need to convert it to a type object
             full_type_name = snake_to_camel(type_name)+'Topic'
             full_type_name = full_type_name[0].upper() + full_type_name[1:]
             # grab the type from the air. Hacker.
             type = globals()[full_type_name]
-            
-            self.add_attribute(name, type, value, is_stateful, order_strict = order_strict)
+
+            if serialized_topic:
+                self.restore_attribute(name, type, serialized_topic)
+            else:
+                self.add_attribute(name, type, value, is_stateful, order_strict = order_strict)
 
         # restore attribute references used in user code
         for ref_name, attr_name in serialized.user_attribute_references.items():
@@ -229,8 +255,15 @@ class SObject:
         if self._id == 'root':
             raise NotImplementedError('Cannot call get_parent of root object')
         return self._server.get_object(self._parent_id.get())
-    
+
     T1 = TypeVar("T1", bound=Topic|WrappedTopic)
+    def restore_attribute(self, topic_name, topic_type: type[T1], serialized) -> T1:
+        if topic_name in self._attributes:
+            raise ValueError(f"Attribute '{topic_name}' already exists")
+        new_attr = self._server.restore_topic(f"a/{self._id}/{topic_name}", topic_type, serialized)
+        self._attributes[topic_name] = new_attr
+        return new_attr
+
     def add_attribute(self, topic_name, topic_type: type[T1], init_value=None, is_stateful=True,order_strict=None) -> T1: 
         if order_strict is None:
             order_strict = is_stateful
@@ -321,9 +354,14 @@ class SObject:
         for name, attr in self._attributes.items():
             if isinstance(attr, WrappedTopic):
                 value = attr.get_raw()
+                attributes_serialized.append(
+                    [name, attr.get_type_name(), value, attr.is_stateful(), attr.is_order_strict()])
             else:
-                value = attr.get()
-            attributes_serialized.append([name,attr.get_type_name(),value,attr.is_stateful(),attr.is_order_strict()])
+                attributes_serialized.append(
+                    # we have to do this, sadly, to align with the serialization of WrappedTopic
+                    [name, attr.get_type_name(), attr.serialize()]
+                )
+
             self._server.remove_topic(attr.get_name())
 
         children_serialized = {}
