@@ -249,6 +249,9 @@ class Server:
         topic = self._topicsync.add_topic(topic_name,topic_type,init_value,is_stateful=is_stateful,order_strict=order_strict)
         return topic
 
+    def restore_topic(self, topic_name, topic_type: type[T], serialize):
+        return self._topicsync.restore_topic(topic_name, topic_type, serialize)
+
     T = TypeVar('T', bound=Topic)
     def get_topic(self, topic_name, type: type[T]=Topic) -> T:
         return self._topicsync.topic(topic_name,type)
