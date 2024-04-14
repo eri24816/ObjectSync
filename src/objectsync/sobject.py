@@ -104,6 +104,7 @@ class SObjectSerialized:
 
 class SObject:
     frontend_type = 'Root'
+    ''' The type of the object that will be displayed in the frontend. '''
 
     '''
     Initialization

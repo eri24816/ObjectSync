@@ -13,12 +13,10 @@ from objectsync.count import gen_id, get_id_count, set_id_count
 from objectsync.sobject import SObject, SObjectSerialized
 
 class Server:
-    def __init__(self, port: int, host:str='localhost', root_object_type:type[SObject]=SObject, 
+    def __init__(self, root_object_type:type[SObject]=SObject, 
                  deserialize_sort_key:Callable[[SObjectSerialized],int]=lambda x:0) -> None:
-        self._port = port
-        self._host = host
         self._to_clear_history = False
-        self._topicsync = TopicsyncServer(port,host,transition_callback=self._transition_callback)
+        self._topicsync = TopicsyncServer(transition_callback=self._transition_callback)
         self._objects : Dict[str,SObject] = {}
         root_id = 'root'
         self._root_object = root_object_type(self,root_id,'')
